@@ -4,69 +4,125 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Price the next week</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&amp;display=swap" rel="stylesheet" />
   <style>
     :root {
       color-scheme: light;
-      --ink: #221e1a;
-      --muted: #5e574e;
-      --line: #ddd4c8;
-      --bg: #e8e2d9;
-      --sheet: #fbf8f4;
-      --field: #fff;
-      --green: #1e4d3a;
-      --green-wash: #e7f2eb;
-      --warn: #6e2e24;
-      --warn-wash: #f8ece7;
+      --ground: #f2f4f7;
+      --surface: #ffffff;
+      --raised: #eeeeee;
+      --border: #e6e6e6;
+      --rule: #f0f0f0;
+      --control: #d4d4d4;
+      --text: #0a0a0a;
+      --muted: #6b6b6b;
+      --accent: #141414;
+      --negative: #c4242a;
+      --warning: #92400e;
+      --chart: #1d5fbf;
+      --notice: #fffbeb;
+      --notice-line: #fde68a;
+      --radius-card: 8px;
+      --radius-control: 6px;
+      --gap: 12px;
+      --pad: 24px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
-      color: var(--ink);
-      background: var(--bg);
+      font: 14px/1.5 "Geist", Inter, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--ground);
     }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 24px 72px; }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 2rem;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      font-weight: 600;
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 48px;
+      padding: 0 var(--pad);
+      background: var(--ground);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
-    h2, h3 { font-weight: 600; }
-    h3 { font-size: 0.95rem; margin: 22px 0 8px; }
-    p { margin: 0 0 8px; }
-    .lead { max-width: 40rem; color: var(--muted); margin: 0 0 28px; }
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-      gap: 24px;
-      align-items: start;
-    }
-    fieldset { border: 0; margin: 0 0 22px; padding: 0; }
-    legend { font-weight: 600; margin-bottom: 10px; padding: 0; }
-    .fields { display: grid; gap: 12px; }
-    label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
-    input, textarea {
-      width: 100%;
-      border: 1px solid #d5cdc2;
-      background: var(--field);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font: 15px/1.3 inherit;
+    .out { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .out span { color: var(--muted); font-size: 13px; }
+    .out button {
+      width: auto;
+      min-height: 32px;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
       color: inherit;
+      font: 500 13px/1 inherit;
+      cursor: pointer;
     }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 13px;
+    .mark { width: 18px; height: 18px; flex: none; }
+    h1 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 20px var(--pad) 40px; }
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0 0 14px;
+      padding: 0;
+      list-style: none;
     }
-    input:focus, textarea:focus, button:focus-visible {
-      outline: 2px solid var(--green);
+    .steps li { display: contents; }
+    .steps button {
+      width: auto;
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 99px;
+      background: transparent;
+      color: var(--muted);
+      font: 500 13px/1 inherit;
+      cursor: pointer;
+    }
+    .steps button[aria-current="step"] { background: var(--text); color: #fff; }
+    .steps button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .steps button:focus-visible, .nav button:focus-visible, input:focus, textarea:focus {
+      outline: 2px solid var(--text);
       outline-offset: 2px;
     }
-    input[type="number"] { appearance: textfield; }
+    .sheet {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 28px var(--pad) 20px;
+      min-height: 460px;
+      display: flex;
+      flex-direction: column;
+    }
+    .step[hidden] { display: none; }
+    .kicker { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .ask { margin: 0 0 20px; max-width: 62ch; }
+    .fields { display: grid; gap: 14px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--control);
+      background: var(--surface);
+      border-radius: var(--radius-control);
+      padding: 8px 10px;
+      min-height: 36px;
+      font: 14px/1.3 inherit;
+      color: inherit;
+    }
+    textarea { min-height: 140px; resize: vertical; font-variant-numeric: tabular-nums; }
+    input[type="number"] { appearance: textfield; font-variant-numeric: tabular-nums; }
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
     .file input {
@@ -78,159 +134,224 @@
     }
     .file-name {
       display: block;
-      padding: 10px 12px;
-      border: 1px dashed #cbbfb0;
-      border-radius: 8px;
-      background: var(--field);
+      min-height: 36px;
+      padding: 8px 10px;
+      border: 1px solid var(--control);
+      border-radius: var(--radius-control);
       color: var(--muted);
     }
-    .check { display: flex; gap: 8px; align-items: center; margin: 12px 0; font-size: 14px; }
-    .check input { width: auto; }
-    .hint { color: var(--muted); font-size: 13px; }
-    button {
-      width: 100%;
-      margin-top: 8px;
-      border: 0;
-      border-radius: 8px;
-      background: var(--ink);
-      color: #f7f3ed;
-      font: 600 15px/1 inherit;
-      padding: 12px 16px;
+    .check { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+    .check input { width: auto; min-height: 0; }
+    .hint, .quiet { color: var(--muted); font-size: 13px; }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 22px;
+    }
+    .nav button {
+      width: auto;
+      min-height: 36px;
+      padding: 8px 16px;
+      border-radius: var(--radius-control);
+      font: 500 14px/1 inherit;
       cursor: pointer;
     }
-    button:hover { background: #3a332c; }
-    button:disabled { opacity: 0.55; cursor: wait; }
-    .result {
-      background: var(--sheet);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 22px;
-      min-height: 240px;
+    .nav .back { background: var(--raised); color: var(--text); border: 0; }
+    .nav .next { background: var(--accent); color: #fff; border: 0; }
+    .nav button:hover { filter: brightness(0.95); }
+    .nav button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .error { color: var(--negative); margin: 12px 0 0; }
+    .figure {
+      margin: 8px 0 4px;
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      font-variant-numeric: tabular-nums;
     }
-    .result.is-fresh { animation: rise 200ms ease; }
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: none; }
-    }
-    .product { margin: 0 0 4px; font-size: 1.05rem; }
-    .decision {
-      margin: 0 0 8px;
-      font-size: 1.8rem;
-      line-height: 1.15;
-      letter-spacing: -0.03em;
-    }
-    .reason, .quiet { color: var(--muted); }
     .caution {
-      background: var(--warn-wash);
-      color: var(--warn);
-      padding: 12px 14px;
-      border-radius: 10px;
+      background: var(--notice);
+      color: var(--warning);
+      border: 1px solid var(--notice-line);
+      padding: 10px 12px;
+      border-radius: var(--radius-control);
       margin: 12px 0;
     }
-    .error { color: var(--warn); margin: 0; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin: 16px 0;
-    }
-    .stats div { min-width: 0; }
-    .stats dt { margin: 0; font-size: 12px; color: var(--muted); }
-    .stats dd {
-      margin: 2px 0 0;
-      font-size: 1.35rem;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
-    }
-    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-    th, td { padding: 9px 8px 9px 0; border-bottom: 1px solid #eee6dc; text-align: left; }
-    th { font-size: 12px; font-weight: 600; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; margin-top: 8px; }
+    th, td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--rule); text-align: left; font-weight: 400; }
+    th { font-size: 12px; color: var(--muted); }
     .num { text-align: right; font-variant-numeric: tabular-nums; }
-    tr.chosen td { background: var(--green-wash); }
-    .tag { color: var(--green); font-size: 12px; margin-left: 6px; }
-    .loss { color: var(--warn); }
+    tr.chosen td:first-child { border-left: 3px solid var(--chart); padding-left: 8px; }
+    .tag { color: var(--chart); font-size: 12px; margin-left: 6px; }
+    .loss { color: var(--negative); }
     .week {
       display: grid;
-      grid-template-columns: 92px 1fr 56px 56px;
+      grid-template-columns: 96px 1fr 64px 56px;
       gap: 8px;
       align-items: center;
-      margin: 5px 0;
+      margin: 8px 0;
       font-size: 13px;
+      font-variant-numeric: tabular-nums;
     }
-    .week.head { color: var(--muted); font-size: 12px; margin-top: 0; }
-    .bar { height: 8px; background: #e6dfd6; border-radius: 99px; overflow: hidden; }
-    .bar > span { display: block; height: 100%; background: #8d8378; border-radius: 99px; }
-    .week.latest .bar > span { background: var(--green); }
-    ul.problems { margin: 0; padding-left: 18px; }
-    ul.problems li { margin: 6px 0; }
-    @media (max-width: 860px) {
-      .workspace { grid-template-columns: 1fr; }
-      .wrap { padding: 24px 16px 48px; }
-      h1 { font-size: 1.7rem; }
-      .decision { font-size: 1.5rem; }
-    }
-    @media (max-width: 520px) {
-      .stats { grid-template-columns: 1fr; }
-      .week { grid-template-columns: 78px 1fr 44px 44px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .result.is-fresh { animation: none; }
+    .week.head { color: var(--muted); font-size: 12px; }
+    .bar { height: 16px; background: var(--raised); border-radius: 2px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--accent); }
+    .week.latest .bar > span { background: var(--chart); }
+    ul.problems { margin: 8px 0 0; padding-left: 18px; }
+    ul.problems li { margin: 8px 0; }
+    @media (max-width: 640px) {
+      .wrap { padding: 16px; }
+      h2 { font-size: 26px; }
+      .figure { font-size: 40px; }
+      .week { grid-template-columns: 78px 1fr 48px 44px; }
     }
   </style>
 </head>
 <body>
-  <main class="wrap">
+  <header class="topbar">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h9.2L20 13.2 12.2 21 4 13.2V7z" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <circle cx="9" cy="11" r="1.1" fill="currentColor" />
+    </svg>
     <h1>Price the next week</h1>
-    <p class="lead">Enter the stock, the cost, and a sales report. You get next week’s sales and a price to approve. The shop price does not change.</p>
-    <div class="workspace">
-      <form id="run-form">
-        <fieldset>
-          <legend>Product</legend>
-          <div class="fields">
-            <label>Product code<input name="product_code" placeholder="BREAD-01" required autocomplete="off" /></label>
-            <label>Stock on hand<input name="stock_on_hand" type="number" min="0" step="any" inputmode="decimal" required /></label>
-            <label>Unit cost<input name="unit_cost" type="number" min="0" step="any" inputmode="decimal" required /></label>
-            <label>Weeks until stock loses value<input name="weeks_until_value_loss" type="number" min="0.1" step="any" inputmode="decimal" required /></label>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>Market</legend>
-          <div class="fields">
-            <label>Market price now<input name="competitor_price" type="number" min="0.01" step="any" inputmode="decimal" required /></label>
-            <label>Sales fall if price rises 10%<input name="sales_drop_percent" type="number" min="0" step="any" inputmode="decimal" required /></label>
-            <label>Price now, if the report has no price<input name="stated_price" type="number" min="0.01" step="any" inputmode="decimal" /></label>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>History</legend>
-          <div class="fields">
-            <label class="file">Sales report
-              <input name="sales_file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" />
-              <span class="file-name" id="file-name">Choose a CSV, TSV, or text file</span>
-            </label>
-            <label>Or paste the table<textarea name="report_text" placeholder="Week ending, Units sold, Sales&#10;2024-09-06, 40, 800"></textarea></label>
-          </div>
-          <label class="check"><input name="use_sample" type="checkbox" /> Use the built-in sample instead</label>
-          <p class="hint">Title rows are skipped. The product code has to match a code in the file. Decimals are fine.</p>
-          <button type="submit">Get a price</button>
-        </fieldset>
-      </form>
-      <section id="result" class="result" aria-live="polite">
-        <p class="quiet">The forecast and the price show up here.</p>
+    <form class="out" method="post" action="/logout">
+      <span id="who"></span>
+      <button type="submit">Sign out</button>
+    </form>
+  </header>
+  <main class="wrap">
+    <ol class="steps" id="steps"></ol>
+    <form id="run-form" class="sheet">
+      <section class="step" data-step="product">
+        <p class="kicker">1 of 8 · The product</p>
+        <h2>Which product is this?</h2>
+        <p class="ask">Name it, then give its sales. A file, a pasted table, or the built-in sample.</p>
+        <div class="fields">
+          <label>Product code<input name="product_code" placeholder="JACKET-01" required autocomplete="off" /></label>
+          <label class="file">Sales report
+            <input name="sales_file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" />
+            <span class="file-name" id="file-name">Choose a CSV, TSV, or text file</span>
+          </label>
+          <label>Or paste the table<textarea name="report_text" placeholder="date, product, price, quantity"></textarea></label>
+          <label class="check"><input name="use_sample" type="checkbox" /> Use the built-in jacket sample</label>
+        </div>
+        <p class="hint">Title rows are skipped. The code has to match a code in the file. Decimals are fine.</p>
       </section>
-    </div>
+
+      <section class="step" data-step="stock" hidden>
+        <p class="kicker">2 of 8 · The stock</p>
+        <h2>What do you hold?</h2>
+        <p class="ask">Stock, what one unit costs you, and how soon unsold stock loses its value.</p>
+        <div class="fields">
+          <label>Stock on hand<input name="stock_on_hand" type="number" min="0" step="any" inputmode="decimal" required /></label>
+          <label>Unit cost<input name="unit_cost" type="number" min="0" step="any" inputmode="decimal" required /></label>
+          <label>Weeks until stock loses value<input name="weeks_until_value_loss" type="number" min="0.1" step="any" inputmode="decimal" required /></label>
+        </div>
+      </section>
+
+      <section class="step" data-step="market" hidden>
+        <p class="kicker">3 of 8 · The market</p>
+        <h2>What is the market doing?</h2>
+        <p class="ask">A price you can see now, and how far sales fall if your price rises 10%.</p>
+        <div class="fields">
+          <label>Market price now<input name="competitor_price" type="number" min="0.01" step="any" inputmode="decimal" required /></label>
+          <label>Sales fall if price rises 10%<input name="sales_drop_percent" type="number" min="0" step="any" inputmode="decimal" required /></label>
+          <label>Price now, if the report has no price<input name="stated_price" type="number" min="0.01" step="any" inputmode="decimal" /></label>
+        </div>
+        <p class="hint">Leave the last box empty when the file already has a price or a sales amount.</p>
+      </section>
+
+      <section class="step" data-step="sales" data-read="true" hidden>
+        <p class="kicker">4 of 8 · Sales</p>
+        <h2>What sold</h2>
+        <p class="ask">Each bar is one week. The latest week is blue.</p>
+        <div id="sales-body"></div>
+      </section>
+
+      <section class="step" data-step="forecast" data-read="true" hidden>
+        <p class="kicker">5 of 8 · Forecast</p>
+        <h2>Next week</h2>
+        <p class="ask">Units expected from the last four weeks, and how far that average missed the latest week.</p>
+        <div id="forecast-body"></div>
+      </section>
+
+      <section class="step" data-step="price" data-read="true" hidden>
+        <p class="kicker">6 of 8 · Price</p>
+        <h2>What to charge</h2>
+        <p class="ask">Four prices. The marked row is the highest profit. Nothing in the shop changes.</p>
+        <div id="price-body"></div>
+      </section>
+
+      <section class="step" data-step="cover" data-read="true" hidden>
+        <p class="kicker">7 of 8 · Stock</p>
+        <h2>How long the stock lasts</h2>
+        <p class="ask">Cover is the stock you typed, divided by next week’s forecast.</p>
+        <div id="cover-body"></div>
+      </section>
+
+      <section class="step" data-step="trust" data-read="true" hidden>
+        <p class="kicker">8 of 8 · Trust</p>
+        <h2>Can you trust the file?</h2>
+        <p class="ask">Rows that were dropped, weeks that look odd, and the miss on the latest week.</p>
+        <div id="trust-body"></div>
+      </section>
+
+      <p class="error" id="run-error" hidden></p>
+      <div class="nav">
+        <button type="button" class="back" id="back">Back</button>
+        <button type="button" class="next" id="next">Continue</button>
+      </div>
+    </form>
   </main>
   <script>
     const form = document.querySelector("#run-form");
-    const result = document.querySelector("#result");
+    const steps = [...form.querySelectorAll(".step")];
+    const stepList = document.querySelector("#steps");
+    const back = document.querySelector("#back");
+    const next = document.querySelector("#next");
     const fileName = document.querySelector("#file-name");
-    const button = form.querySelector("button");
+    const runError = document.querySelector("#run-error");
     const names = { hold: "Hold", mark_down: "Mark down", raise: "Raise", match_market: "Match market" };
+    const labels = ["Product", "Stock", "Market", "Sales", "Forecast", "Price", "Cover", "Trust"];
+    let index = 0;
+    let board = null;
+
+    fetch("/me").then(async (response) => {
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!response.ok) return;
+      const me = await response.json();
+      const who = document.querySelector("#who");
+      if (who) who.textContent = me.email || "";
+    });
+
+    labels.forEach((label, i) => {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (i > 2 && !board) return;
+        show(i);
+      });
+      item.append(button);
+      stepList.append(item);
+    });
 
     form.sales_file.addEventListener("change", () => {
       const file = form.sales_file.files[0];
       fileName.textContent = file ? file.name : "Choose a CSV, TSV, or text file";
+    });
+
+    form.addEventListener("input", () => {
+      if (!board) return;
+      board = null;
+      runError.hidden = true;
+      paint();
     });
 
     function escapeHtml(value) {
@@ -246,95 +367,120 @@
       return n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
     }
 
-    function missing(data) {
+    function paint() {
+      steps.forEach((step, i) => { step.hidden = i !== index; });
+      [...stepList.querySelectorAll("button")].forEach((button, i) => {
+        if (i === index) button.setAttribute("aria-current", "step");
+        else button.removeAttribute("aria-current");
+        button.disabled = i > 2 && !board;
+      });
+      back.disabled = index === 0;
+      next.textContent = index === 2 ? "Get a price" : index === steps.length - 1 ? "Back to the product" : "Continue";
+      next.disabled = false;
+    }
+
+    function show(i) {
+      index = i;
+      paint();
+      const heading = steps[i].querySelector("h2");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus();
+      }
+    }
+
+    function gapsFor(stepName, data) {
       const gaps = [];
-      if (!data.get("product_code")) gaps.push("a product code");
-      if (data.get("stock_on_hand") === "") gaps.push("stock on hand");
-      if (data.get("unit_cost") === "") gaps.push("unit cost");
-      if (!data.get("weeks_until_value_loss")) gaps.push("weeks until the stock loses value");
-      if (!data.get("competitor_price")) gaps.push("the market price");
-      if (data.get("sales_drop_percent") === "") gaps.push("how far sales fall if the price rises 10%");
-      const pasted = (data.get("report_text") || "").trim();
-      const hasFile = data.get("sales_file") && data.get("sales_file").name;
-      if (data.get("use_sample") !== "on" && !hasFile && !pasted) gaps.push("a sales report, a pasted table, or the sample");
+      if (stepName === "product") {
+        if (!data.get("product_code")) gaps.push("a product code");
+        const pasted = (data.get("report_text") || "").trim();
+        const hasFile = data.get("sales_file") && data.get("sales_file").name;
+        if (data.get("use_sample") !== "on" && !hasFile && !pasted) gaps.push("a sales report, a pasted table, or the sample");
+      }
+      if (stepName === "stock") {
+        if (data.get("stock_on_hand") === "") gaps.push("stock on hand");
+        if (data.get("unit_cost") === "") gaps.push("unit cost");
+        if (!data.get("weeks_until_value_loss")) gaps.push("weeks until the stock loses value");
+      }
+      if (stepName === "market") {
+        if (!data.get("competitor_price")) gaps.push("the market price");
+        if (data.get("sales_drop_percent") === "") gaps.push("how far sales fall if the price rises 10%");
+      }
       return gaps;
     }
 
-    function show(html) {
-      result.classList.remove("is-fresh");
-      result.innerHTML = html;
-      void result.offsetWidth;
-      result.classList.add("is-fresh");
+    function sayError(message) {
+      runError.hidden = false;
+      runError.textContent = message;
     }
 
-    // Draws the dashboard the API returned. A miss of 50% or more is the pink warning.
-    function render(board) {
-      const action = board.price_action || "";
-      const label = names[action] || action.replaceAll("_", " ");
-      const headline = action === "hold"
-        ? `Hold at ${num(board.suggested_price)}`
-        : `${label} to ${num(board.suggested_price)}`;
-      const weak = board.mape != null && Number(board.mape) >= 50;
-      const history = board.history || [];
+    function weeksHtml(history) {
       const maxQty = Math.max(...history.map((week) => Number(week.quantity) || 0), 1);
-      const weeks = history.map((week, index) => {
-        const width = Math.max(4, (Number(week.quantity) / maxQty) * 100);
-        const latest = index === history.length - 1 ? " latest" : "";
+      const rows = history.map((week, i) => {
+        const quantity = Number(week.quantity) || 0;
+        const width = quantity <= 0 ? 0 : Math.max(4, (quantity / maxQty) * 100);
+        const latest = i === history.length - 1 ? " latest" : "";
         return `<div class="week${latest}"><span>${escapeHtml(week.week)}</span><span class="bar"><span style="width:${width}%"></span></span><span class="num">${num(week.quantity)}</span><span class="num">${num(week.avg_price)}</span></div>`;
       }).join("");
+      return `<div class="week head"><span>Week</span><span></span><span class="num">Units</span><span class="num">Price</span></div>${rows}`;
+    }
+
+    function fillResults() {
+      const action = board.price_action || "";
+      const label = names[action] || action.replaceAll("_", " ");
+      const headline = action === "hold" ? `Hold at ${num(board.suggested_price)}` : `${label} to ${num(board.suggested_price)}`;
+      const history = board.history || [];
+      const last = history[history.length - 1];
+      const weak = board.mape != null && Number(board.mape) >= 50;
+      document.querySelector("#sales-body").innerHTML = `
+        <p>${history.length} weeks${last ? `. The latest sold ${num(last.quantity)} at ${num(last.avg_price)}.` : ""}</p>
+        ${weeksHtml(history)}
+        <p class="quiet">${escapeHtml(board.intake_note || "")}</p>`;
+      document.querySelector("#forecast-body").innerHTML = `
+        <p class="figure">${num(board.forecast_units)}</p>
+        <p>${escapeHtml(board.forecast_method || "")}.</p>
+        <p>${board.mape == null ? `Price now is ${num(board.current_price)}. There are not enough weeks for a miss.` : `Last-week miss is ${num(board.mape)}%.`}</p>
+        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p class="quiet">${escapeHtml(board.evaluation || "")}</p>`}`;
       const options = (board.price_options || []).map((option) => {
         const chosen = option.action === action;
         const loss = Number(option.profit) < 0 ? " loss" : "";
         const name = names[option.action] || option.action;
         return `<tr class="${chosen ? "chosen" : ""}"><td>${escapeHtml(name)}${chosen ? ' <span class="tag">Chosen</span>' : ""}</td><td class="num">${num(option.price)}</td><td class="num">${num(option.demand)}</td><td class="num${loss}">${num(option.profit)}</td></tr>`;
       }).join("");
-      const problems = [...(board.warnings || []), ...(board.dropped || [])];
-      const problemList = problems.length
-        ? `<h3>Problems in this file</h3><ul class="problems">${problems.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
-        : "";
-      const third = board.mape == null
-        ? `<dt>Price now</dt><dd>${num(board.current_price)}</dd>`
-        : `<dt>Miss on last week</dt><dd>${num(board.mape)}%</dd>`;
-      const guards = (board.guardrails || []).filter((note) => !note.startsWith("Price stays above cost"));
-      show(`
-        <p class="product">${escapeHtml(board.product_code)}</p>
-        <h2 class="decision">${escapeHtml(headline)}</h2>
-        <p class="reason">${escapeHtml(board.pricing_reason || "")}</p>
-        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : ""}
-        <dl class="stats">
-          <div><dt>Next week</dt><dd>${num(board.forecast_units)}</dd></div>
-          <div><dt>Weeks of cover</dt><dd>${num(board.weeks_of_cover)}</dd></div>
-          <div>${third}</div>
-        </dl>
-        <p>${escapeHtml(board.inventory_reason || "")}</p>
-        <h3>The four prices</h3>
+      document.querySelector("#price-body").innerHTML = `
+        <p class="figure">${escapeHtml(headline)}</p>
+        <p>${escapeHtml(board.pricing_reason || "")}</p>
         <table>
           <thead><tr><th>Choice</th><th class="num">Price</th><th class="num">Demand</th><th class="num">Profit</th></tr></thead>
           <tbody>${options}</tbody>
-        </table>
-        <h3>Sales by week</h3>
-        <div class="week head"><span>Week</span><span></span><span class="num">Units</span><span class="num">Price</span></div>
-        ${weeks}
-        <p class="quiet">${escapeHtml(board.forecast_method || "")}.</p>
-        ${problemList}
-        ${!weak && board.evaluation ? `<p class="quiet">${escapeHtml(board.evaluation)}</p>` : ""}
-        ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}
-        <p class="quiet">${escapeHtml(board.intake_note || "")}</p>
-      `);
+        </table>`;
+      const alert = board.inventory_alert || "review";
+      document.querySelector("#cover-body").innerHTML = `
+        <p class="figure">${num(board.weeks_of_cover)}</p>
+        <p>Weeks of cover. The stock call is ${escapeHtml(alert)}.</p>
+        <p>${escapeHtml(board.inventory_reason || "")}</p>`;
+      const problems = [...(board.warnings || []), ...(board.dropped || [])];
+      const list = problems.length
+        ? `<ul class="problems">${problems.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
+        : `<p>No rows were dropped and no warning was raised.</p>`;
+      const guards = (board.guardrails || []).filter((note) => !note.startsWith("Price stays above cost"));
+      document.querySelector("#trust-body").innerHTML = `
+        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p>${escapeHtml(board.evaluation || "No hold-out miss on this file.")}</p>`}
+        ${list}
+        ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}`;
     }
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    async function run() {
       const data = new FormData(form);
-      const gaps = missing(data);
+      const gaps = ["product", "stock", "market"].flatMap((name) => gapsFor(name, data));
       if (gaps.length) {
-        show(`<p class="error">Still needed: ${escapeHtml(gaps.join(", "))}.</p>`);
+        sayError(`Still needed: ${gaps.join(", ")}.`);
         return;
       }
-      button.disabled = true;
-      show("<p class=\"quiet\">Checking the rows, then comparing prices.</p>");
+      runError.hidden = true;
+      next.disabled = true;
+      next.textContent = "Checking the rows";
       try {
-        // Paste wins over a chosen file. The sample is used only when both are empty.
         const pasted = (data.get("report_text") || "").trim();
         let csvPath = null;
         if (data.get("use_sample") !== "on" && !pasted) {
@@ -343,7 +489,7 @@
           const uploaded = await fetch("/uploads", { method: "POST", body: upload });
           const saved = await uploaded.json();
           if (!uploaded.ok) {
-            show("<p class=\"error\">The file was not accepted.</p>");
+            sayError("The file was not accepted.");
             return;
           }
           csvPath = saved.csv_path;
@@ -368,19 +514,41 @@
         try {
           body = await response.json();
         } catch {
-          show("<p class=\"error\">The run failed before it could answer.</p>");
+          sayError("The run failed before it could answer.");
           return;
         }
         const errors = body.errors || body.dashboard?.errors || [];
         if (!response.ok || errors.length) {
-          show(`<p class="error">${escapeHtml(errors.join(" "))}</p>`);
+          sayError(errors.join(" "));
           return;
         }
-        render(body.dashboard);
+        board = body.dashboard;
+        fillResults();
+        show(3);
       } finally {
-        button.disabled = false;
+        next.disabled = false;
+        paint();
       }
+    }
+
+    back.addEventListener("click", () => { if (index > 0) show(index - 1); });
+    next.addEventListener("click", () => {
+      if (index === steps.length - 1) {
+        show(0);
+        return;
+      }
+      const data = new FormData(form);
+      const gaps = gapsFor(steps[index].dataset.step, data);
+      if (gaps.length) {
+        sayError(`Still needed: ${gaps.join(", ")}.`);
+        return;
+      }
+      runError.hidden = true;
+      if (index === 2) run();
+      else show(index + 1);
     });
+
+    paint();
   </script>
 </body>
 </html>
