@@ -1,17 +1,15 @@
 """Arena: data. Owner: Sufiyaan.
 
-Loads a sales CSV: date, product, price, quantity, optional invoice.
-Public retail files are expected; this agent does not call a live shop.
+Loads a sales report. Column names can vary. A pasted table is accepted too.
 """
 
 from __future__ import annotations
 
-import csv
-from datetime import datetime
 from pathlib import Path
 
 from app.agents.base import Agent
-from app.context import RunContext, SalesRow
+from app.context import RunContext
+from app.intake import read_sales_report
 
 
 class DataAgent(Agent):
@@ -24,26 +22,17 @@ class DataAgent(Agent):
             return ctx
         path = Path(ctx.csv_path)
         if not path.is_file():
-            ctx.errors.append(f"Sales file not found: {ctx.csv_path}")
+            ctx.errors.append("Add a sales report, or paste the table.")
             return ctx
-        rows: list[SalesRow] = []
-        with path.open(newline="", encoding="utf-8") as handle:
-            reader = csv.DictReader(handle)
-            required = {"date", "product", "price", "quantity"}
-            if not reader.fieldnames or not required.issubset(set(reader.fieldnames)):
-                ctx.errors.append("CSV must include date, product, price, and quantity.")
-                return ctx
-            for raw in reader:
-                sold_on = datetime.strptime(raw["date"].strip(), "%Y-%m-%d").date()
-                rows.append(
-                    SalesRow(
-                        sold_on=sold_on,
-                        product_code=raw["product"].strip(),
-                        unit_price=float(raw["price"]),
-                        quantity=int(float(raw["quantity"])),
-                        invoice=(raw.get("invoice") or "").strip(),
-                    )
-                )
+        # utf-8-sig drops an Excel byte-order mark. Bad bytes are replaced, not rejected.
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        try:
+            rows, note, warnings = read_sales_report(text, ctx.product_code, ctx.stated_price)
+        except ValueError as error:
+            ctx.errors.append(str(error))
+            return ctx
         ctx.raw_rows = rows
-        self.note(ctx, f"loaded {len(rows)} rows")
+        ctx.intake_note = note
+        ctx.warnings.extend(warnings)
+        self.note(ctx, note)
         return ctx

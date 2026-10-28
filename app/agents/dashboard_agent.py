@@ -22,6 +22,7 @@ class DashboardAgent(Agent):
             return ctx
         action = ctx.price_action
         status = "pending"
+        # The form does not send an override yet. The API accepts hold, mark_down, or raise.
         if ctx.manager_override:
             action = ctx.manager_override
             status = "overridden"
@@ -31,6 +32,7 @@ class DashboardAgent(Agent):
                 ctx.suggested_price = round(ctx.current_price * 0.85, 2)
             elif action == "raise" and ctx.current_price is not None:
                 ctx.suggested_price = round(ctx.current_price * 1.10, 2)
+            # Same 15% / 10% steps as pricing. A markdown that lands under cost is lifted.
             if ctx.suggested_price is not None and ctx.suggested_price < ctx.unit_cost:
                 ctx.suggested_price = round(ctx.unit_cost, 2)
                 ctx.guardrail_notes.append("Override was lifted to unit cost.")
@@ -56,6 +58,16 @@ class DashboardAgent(Agent):
             "evaluation": ctx.evaluation_note,
             "mape": ctx.mape,
             "dropped_rows": len(ctx.dropped),
+            "dropped": [
+                f"Invoice {item['invoice']}: {item['reason']}" if item.get("invoice") else item["reason"]
+                for item in ctx.dropped
+            ],
+            "warnings": list(ctx.warnings),
+            "weeks_until_value_loss": ctx.weeks_until_value_loss,
+            "competitor_price": ctx.competitor_price,
+            "sales_drop_percent": ctx.sales_drop_percent,
+            "price_options": ctx.price_options,
+            "intake_note": ctx.intake_note,
         }
         self.note(ctx, f"view ready, approval {status}")
         return ctx

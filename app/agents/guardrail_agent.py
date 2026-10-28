@@ -19,6 +19,8 @@ class GuardrailAgent(Agent):
             return ctx
         price = ctx.suggested_price or 0
         current = ctx.current_price or price
+        # Order matters. The cost floor runs first. The 20% cap runs second and
+        # can pull the price back under cost. Example: history 10, cost 15, result 12.
         if price < ctx.unit_cost:
             ctx.blocked = True
             ctx.suggested_price = round(ctx.unit_cost, 2)

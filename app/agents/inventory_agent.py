@@ -24,13 +24,22 @@ class InventoryAgent(Agent):
             ctx.inventory_alert = "review"
             ctx.inventory_reason = "Forecast is zero, so weeks of cover is undefined."
             return ctx
+        # How many weeks the typed stock would last if next week repeats.
         cover = ctx.stock_on_hand / forecast
         ctx.weeks_of_cover = round(cover, 2)
         baseline = ctx.recent_average or forecast
+        horizon = ctx.weeks_until_value_loss or 0
+        # Cover is stock divided by the forecast. Under 2 weeks: reorder.
+        # Longer than the spoilage horizon, or 4 weeks with a soft forecast: clear.
         if cover < 2:
             ctx.inventory_alert = "reorder"
             ctx.inventory_reason = (
                 f"About {ctx.weeks_of_cover} weeks of cover at the forecast rate."
+            )
+        elif horizon and cover > horizon:
+            ctx.inventory_alert = "clear"
+            ctx.inventory_reason = (
+                f"About {ctx.weeks_of_cover} weeks of cover, but the stock loses value in {horizon:g} weeks."
             )
         elif cover >= 4 and forecast < 0.7 * baseline:
             ctx.inventory_alert = "clear"

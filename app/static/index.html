@@ -3,98 +3,384 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pricing and inventory</title>
+  <title>Price the next week</title>
   <style>
-    :root { color-scheme: light; --ink: #1c1917; --muted: #57534e; --line: #e7e5e4; --bg: #fafaf9; --card: #fff; }
-    body { margin: 0; font: 16px/1.45 Georgia, "Iowan Old Style", serif; color: var(--ink); background: var(--bg); }
-    main { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
-    h1 { font-size: 1.7rem; font-weight: 600; margin: 0 0 8px; }
-    p.lead { color: var(--muted); margin: 0 0 24px; }
-    form, section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    label { display: block; font: 13px/1.3 ui-sans-serif, system-ui, sans-serif; margin-bottom: 10px; }
-    input { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: 15px ui-sans-serif, system-ui, sans-serif; }
-    .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    button { font: 14px ui-sans-serif, system-ui, sans-serif; padding: 8px 12px; border-radius: 8px; border: 1px solid #1c1917; background: #1c1917; color: #fff; cursor: pointer; }
-    button.ghost { background: #fff; color: #1c1917; }
-    .metric { font: 28px/1.1 ui-sans-serif, system-ui, sans-serif; margin: 0; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f5f5f4; font: 12px ui-sans-serif, system-ui, sans-serif; }
-    .bars { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
-    .bars div { flex: 1; background: #44403c; border-radius: 4px 4px 0 0; min-height: 4px; position: relative; }
-    .bars span { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font: 11px ui-sans-serif, system-ui, sans-serif; }
-    .error { color: #9f1239; font: 14px ui-sans-serif, system-ui, sans-serif; }
-    ul { margin: 8px 0 0; padding-left: 18px; }
+    :root {
+      color-scheme: light;
+      --ink: #221e1a;
+      --muted: #5e574e;
+      --line: #ddd4c8;
+      --bg: #e8e2d9;
+      --sheet: #fbf8f4;
+      --field: #fff;
+      --green: #1e4d3a;
+      --green-wash: #e7f2eb;
+      --warn: #6e2e24;
+      --warn-wash: #f8ece7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 36px 24px 72px; }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      font-weight: 600;
+    }
+    h2, h3 { font-weight: 600; }
+    h3 { font-size: 0.95rem; margin: 22px 0 8px; }
+    p { margin: 0 0 8px; }
+    .lead { max-width: 40rem; color: var(--muted); margin: 0 0 28px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    fieldset { border: 0; margin: 0 0 22px; padding: 0; }
+    legend { font-weight: 600; margin-bottom: 10px; padding: 0; }
+    .fields { display: grid; gap: 12px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+    input, textarea {
+      width: 100%;
+      border: 1px solid #d5cdc2;
+      background: var(--field);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: 15px/1.3 inherit;
+      color: inherit;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+    }
+    input:focus, textarea:focus, button:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+    }
+    input[type="number"] { appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
+    .file input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .file-name {
+      display: block;
+      padding: 10px 12px;
+      border: 1px dashed #cbbfb0;
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--muted);
+    }
+    .check { display: flex; gap: 8px; align-items: center; margin: 12px 0; font-size: 14px; }
+    .check input { width: auto; }
+    .hint { color: var(--muted); font-size: 13px; }
+    button {
+      width: 100%;
+      margin-top: 8px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #f7f3ed;
+      font: 600 15px/1 inherit;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+    button:hover { background: #3a332c; }
+    button:disabled { opacity: 0.55; cursor: wait; }
+    .result {
+      background: var(--sheet);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      min-height: 240px;
+    }
+    .result.is-fresh { animation: rise 200ms ease; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+    .product { margin: 0 0 4px; font-size: 1.05rem; }
+    .decision {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+    .reason, .quiet { color: var(--muted); }
+    .caution {
+      background: var(--warn-wash);
+      color: var(--warn);
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin: 12px 0;
+    }
+    .error { color: var(--warn); margin: 0; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stats div { min-width: 0; }
+    .stats dt { margin: 0; font-size: 12px; color: var(--muted); }
+    .stats dd {
+      margin: 2px 0 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: 9px 8px 9px 0; border-bottom: 1px solid #eee6dc; text-align: left; }
+    th { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr.chosen td { background: var(--green-wash); }
+    .tag { color: var(--green); font-size: 12px; margin-left: 6px; }
+    .loss { color: var(--warn); }
+    .week {
+      display: grid;
+      grid-template-columns: 92px 1fr 56px 56px;
+      gap: 8px;
+      align-items: center;
+      margin: 5px 0;
+      font-size: 13px;
+    }
+    .week.head { color: var(--muted); font-size: 12px; margin-top: 0; }
+    .bar { height: 8px; background: #e6dfd6; border-radius: 99px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: #8d8378; border-radius: 99px; }
+    .week.latest .bar > span { background: var(--green); }
+    ul.problems { margin: 0; padding-left: 18px; }
+    ul.problems li { margin: 6px 0; }
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; }
+      .wrap { padding: 24px 16px 48px; }
+      h1 { font-size: 1.7rem; }
+      .decision { font-size: 1.5rem; }
+    }
+    @media (max-width: 520px) {
+      .stats { grid-template-columns: 1fr; }
+      .week { grid-template-columns: 78px 1fr 44px 44px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .result.is-fresh { animation: none; }
+    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Pricing and inventory</h1>
-    <p class="lead">Ten agents forecast next week and recommend hold, mark down, or raise. A manager still has to approve it.</p>
-    <form id="run-form">
-      <div class="row">
-        <label>Product<input name="product_code" value="JACKET-01" required /></label>
-        <label>Stock on hand<input name="stock_on_hand" type="number" min="0" value="400" required /></label>
-        <label>Unit cost<input name="unit_cost" type="number" min="0" step="0.01" value="40" required /></label>
-      </div>
-      <div class="actions">
-        <button type="submit">Run recommendation</button>
-        <button class="ghost" type="button" onclick="run('hold')">Approve hold</button>
-        <button class="ghost" type="button" onclick="run('mark_down')">Approve markdown</button>
-        <button class="ghost" type="button" onclick="run('raise')">Approve raise</button>
-      </div>
-    </form>
-    <section id="result"><p class="lead">No run yet.</p></section>
+  <main class="wrap">
+    <h1>Price the next week</h1>
+    <p class="lead">Enter the stock, the cost, and a sales report. You get next week’s sales and a price to approve. The shop price does not change.</p>
+    <div class="workspace">
+      <form id="run-form">
+        <fieldset>
+          <legend>Product</legend>
+          <div class="fields">
+            <label>Product code<input name="product_code" placeholder="BREAD-01" required autocomplete="off" /></label>
+            <label>Stock on hand<input name="stock_on_hand" type="number" min="0" step="any" inputmode="decimal" required /></label>
+            <label>Unit cost<input name="unit_cost" type="number" min="0" step="any" inputmode="decimal" required /></label>
+            <label>Weeks until stock loses value<input name="weeks_until_value_loss" type="number" min="0.1" step="any" inputmode="decimal" required /></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Market</legend>
+          <div class="fields">
+            <label>Market price now<input name="competitor_price" type="number" min="0.01" step="any" inputmode="decimal" required /></label>
+            <label>Sales fall if price rises 10%<input name="sales_drop_percent" type="number" min="0" step="any" inputmode="decimal" required /></label>
+            <label>Price now, if the report has no price<input name="stated_price" type="number" min="0.01" step="any" inputmode="decimal" /></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>History</legend>
+          <div class="fields">
+            <label class="file">Sales report
+              <input name="sales_file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" />
+              <span class="file-name" id="file-name">Choose a CSV, TSV, or text file</span>
+            </label>
+            <label>Or paste the table<textarea name="report_text" placeholder="Week ending, Units sold, Sales&#10;2024-09-06, 40, 800"></textarea></label>
+          </div>
+          <label class="check"><input name="use_sample" type="checkbox" /> Use the built-in sample instead</label>
+          <p class="hint">Title rows are skipped. The product code has to match a code in the file. Decimals are fine.</p>
+          <button type="submit">Get a price</button>
+        </fieldset>
+      </form>
+      <section id="result" class="result" aria-live="polite">
+        <p class="quiet">The forecast and the price show up here.</p>
+      </section>
+    </div>
   </main>
   <script>
     const form = document.querySelector("#run-form");
     const result = document.querySelector("#result");
+    const fileName = document.querySelector("#file-name");
+    const button = form.querySelector("button");
+    const names = { hold: "Hold", mark_down: "Mark down", raise: "Raise", match_market: "Match market" };
 
-    function payload(override) {
-      const data = new FormData(form);
-      return {
-        product_code: data.get("product_code"),
-        stock_on_hand: Number(data.get("stock_on_hand")),
-        unit_cost: Number(data.get("unit_cost")),
-        manager_override: override || null
-      };
+    form.sales_file.addEventListener("change", () => {
+      const file = form.sales_file.files[0];
+      fileName.textContent = file ? file.name : "Choose a CSV, TSV, or text file";
+    });
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
     }
 
-    async function run(override) {
-      result.innerHTML = "<p>Running the ten agents…</p>";
-      const response = await fetch("/runs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload(override))
-      });
-      const body = await response.json();
-      if (!response.ok || (body.errors && body.errors.length)) {
-        result.innerHTML = `<p class="error">${(body.errors || ["Request failed"]).join(" ")}</p>`;
+    function num(value) {
+      if (value === null || value === undefined || value === "") return "–";
+      const n = Number(value);
+      if (!Number.isFinite(n)) return escapeHtml(value);
+      return n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
+    }
+
+    function missing(data) {
+      const gaps = [];
+      if (!data.get("product_code")) gaps.push("a product code");
+      if (data.get("stock_on_hand") === "") gaps.push("stock on hand");
+      if (data.get("unit_cost") === "") gaps.push("unit cost");
+      if (!data.get("weeks_until_value_loss")) gaps.push("weeks until the stock loses value");
+      if (!data.get("competitor_price")) gaps.push("the market price");
+      if (data.get("sales_drop_percent") === "") gaps.push("how far sales fall if the price rises 10%");
+      const pasted = (data.get("report_text") || "").trim();
+      const hasFile = data.get("sales_file") && data.get("sales_file").name;
+      if (data.get("use_sample") !== "on" && !hasFile && !pasted) gaps.push("a sales report, a pasted table, or the sample");
+      return gaps;
+    }
+
+    function show(html) {
+      result.classList.remove("is-fresh");
+      result.innerHTML = html;
+      void result.offsetWidth;
+      result.classList.add("is-fresh");
+    }
+
+    // Draws the dashboard the API returned. A miss of 50% or more is the pink warning.
+    function render(board) {
+      const action = board.price_action || "";
+      const label = names[action] || action.replaceAll("_", " ");
+      const headline = action === "hold"
+        ? `Hold at ${num(board.suggested_price)}`
+        : `${label} to ${num(board.suggested_price)}`;
+      const weak = board.mape != null && Number(board.mape) >= 50;
+      const history = board.history || [];
+      const maxQty = Math.max(...history.map((week) => Number(week.quantity) || 0), 1);
+      const weeks = history.map((week, index) => {
+        const width = Math.max(4, (Number(week.quantity) / maxQty) * 100);
+        const latest = index === history.length - 1 ? " latest" : "";
+        return `<div class="week${latest}"><span>${escapeHtml(week.week)}</span><span class="bar"><span style="width:${width}%"></span></span><span class="num">${num(week.quantity)}</span><span class="num">${num(week.avg_price)}</span></div>`;
+      }).join("");
+      const options = (board.price_options || []).map((option) => {
+        const chosen = option.action === action;
+        const loss = Number(option.profit) < 0 ? " loss" : "";
+        const name = names[option.action] || option.action;
+        return `<tr class="${chosen ? "chosen" : ""}"><td>${escapeHtml(name)}${chosen ? ' <span class="tag">Chosen</span>' : ""}</td><td class="num">${num(option.price)}</td><td class="num">${num(option.demand)}</td><td class="num${loss}">${num(option.profit)}</td></tr>`;
+      }).join("");
+      const problems = [...(board.warnings || []), ...(board.dropped || [])];
+      const problemList = problems.length
+        ? `<h3>Problems in this file</h3><ul class="problems">${problems.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
+        : "";
+      const third = board.mape == null
+        ? `<dt>Price now</dt><dd>${num(board.current_price)}</dd>`
+        : `<dt>Miss on last week</dt><dd>${num(board.mape)}%</dd>`;
+      const guards = (board.guardrails || []).filter((note) => !note.startsWith("Price stays above cost"));
+      show(`
+        <p class="product">${escapeHtml(board.product_code)}</p>
+        <h2 class="decision">${escapeHtml(headline)}</h2>
+        <p class="reason">${escapeHtml(board.pricing_reason || "")}</p>
+        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : ""}
+        <dl class="stats">
+          <div><dt>Next week</dt><dd>${num(board.forecast_units)}</dd></div>
+          <div><dt>Weeks of cover</dt><dd>${num(board.weeks_of_cover)}</dd></div>
+          <div>${third}</div>
+        </dl>
+        <p>${escapeHtml(board.inventory_reason || "")}</p>
+        <h3>The four prices</h3>
+        <table>
+          <thead><tr><th>Choice</th><th class="num">Price</th><th class="num">Demand</th><th class="num">Profit</th></tr></thead>
+          <tbody>${options}</tbody>
+        </table>
+        <h3>Sales by week</h3>
+        <div class="week head"><span>Week</span><span></span><span class="num">Units</span><span class="num">Price</span></div>
+        ${weeks}
+        <p class="quiet">${escapeHtml(board.forecast_method || "")}.</p>
+        ${problemList}
+        ${!weak && board.evaluation ? `<p class="quiet">${escapeHtml(board.evaluation)}</p>` : ""}
+        ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}
+        <p class="quiet">${escapeHtml(board.intake_note || "")}</p>
+      `);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const gaps = missing(data);
+      if (gaps.length) {
+        show(`<p class="error">Still needed: ${escapeHtml(gaps.join(", "))}.</p>`);
         return;
       }
-      const board = body.dashboard;
-      const max = Math.max(...board.history.map((row) => row.quantity), board.forecast_units || 0, 1);
-      const bars = board.history.map((row) => {
-        const height = Math.round((row.quantity / max) * 120);
-        return `<div style="height:${height}px"><span>${row.quantity}</span></div>`;
-      }).join("");
-      result.innerHTML = `
-        <p><span class="tag">${board.status}</span> <span class="tag">${board.price_action.replace("_", " ")}</span> <span class="tag">${board.inventory_alert}</span></p>
-        <p class="metric">${board.forecast_units} units next week</p>
-        <p>${board.forecast_method}. Current price ${board.current_price}, suggested ${board.suggested_price}.</p>
-        <p>${board.pricing_reason}</p>
-        <p>${board.inventory_reason}</p>
-        <div class="bars">${bars}</div>
-        <p>${board.evaluation}</p>
-        <ul>${board.guardrails.map((note) => `<li>${note}</li>`).join("")}</ul>
-      `;
-    }
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      run(null);
+      button.disabled = true;
+      show("<p class=\"quiet\">Checking the rows, then comparing prices.</p>");
+      try {
+        // Paste wins over a chosen file. The sample is used only when both are empty.
+        const pasted = (data.get("report_text") || "").trim();
+        let csvPath = null;
+        if (data.get("use_sample") !== "on" && !pasted) {
+          const upload = new FormData();
+          upload.append("file", data.get("sales_file"));
+          const uploaded = await fetch("/uploads", { method: "POST", body: upload });
+          const saved = await uploaded.json();
+          if (!uploaded.ok) {
+            show("<p class=\"error\">The file was not accepted.</p>");
+            return;
+          }
+          csvPath = saved.csv_path;
+        }
+        const response = await fetch("/runs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_code: data.get("product_code"),
+            stock_on_hand: Number(data.get("stock_on_hand")),
+            unit_cost: Number(data.get("unit_cost")),
+            weeks_until_value_loss: Number(data.get("weeks_until_value_loss")),
+            competitor_price: Number(data.get("competitor_price")),
+            sales_drop_percent: Number(data.get("sales_drop_percent")),
+            stated_price: data.get("stated_price") ? Number(data.get("stated_price")) : null,
+            use_sample: data.get("use_sample") === "on" && !pasted && !csvPath,
+            csv_path: csvPath,
+            report_text: pasted || null
+          })
+        });
+        let body;
+        try {
+          body = await response.json();
+        } catch {
+          show("<p class=\"error\">The run failed before it could answer.</p>");
+          return;
+        }
+        const errors = body.errors || body.dashboard?.errors || [];
+        if (!response.ok || errors.length) {
+          show(`<p class="error">${escapeHtml(errors.join(" "))}</p>`);
+          return;
+        }
+        render(body.dashboard);
+      } finally {
+        button.disabled = false;
+      }
     });
-    window.run = run;
-    run(null);
   </script>
 </body>
 </html>
