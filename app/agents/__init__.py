@@ -11,6 +11,8 @@ from app.agents.pricing_agent import PricingAgent
 from app.agents.requirements_agent import RequirementsAgent
 from app.agents.transform_agent import TransformAgent
 
+# Fixed order. A later agent reads what the earlier ones wrote on the context.
+# Dashboard still runs after a failure so the page can show the error.
 AGENTS = [
     RequirementsAgent(),
     DataAgent(),
