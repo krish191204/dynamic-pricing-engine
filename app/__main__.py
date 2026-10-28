@@ -9,10 +9,10 @@ SAMPLE = Path(__file__).resolve().parents[1] / "data" / "sample_sales.csv"
 
 
 def main() -> None:
-    # Season ending: lots of stock, soft recent weeks -> markdown + clear.
+    # High stock and a falling jacket series. The market price is inside the 20% step, so the run matches it.
     ending = run_analysis(
         str(SAMPLE),
-        "SAMPLE-SKU",
+        "JACKET-01",
         stock_on_hand=400,
         unit_cost=40,
         weeks_until_value_loss=4,
