@@ -4,7 +4,7 @@ One product goes in. Three answers come out: how many units to expect next week,
 
 Phase 1 is the part that runs today: a sales history you already have, numbers you type for stock and the market, and a recommendation on one page. Competitor feeds, automatic price changes, a forecast other than a four-week average, and several products in one run are later work. They are listed in [docs/PLAN.md](docs/PLAN.md).
 
-The page is a local tool. There is no login, and a run is not saved after you refresh.
+The page asks you to sign in. An account is an email and a password. The password is stored as a hash in Postgres (`app_users`). A run is still not saved after you refresh.
 
 ## What you need
 
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 On Windows, activate with `.venv\Scripts\activate`.
 
-Dependencies, from `requirements.txt`: FastAPI, uvicorn, python-multipart (file upload), pytest.
+Dependencies, from `requirements.txt`: FastAPI, uvicorn, python-multipart (file upload), psycopg (Postgres), pytest.
 
 ## Run the page
 
@@ -41,6 +41,21 @@ curl http://127.0.0.1:8000/health
 ```
 
 A healthy process returns `{"status":"ok","agents":10}`.
+
+## Sign in
+
+Opening the page sends you to `/login`. Sign in, or create an account with the second button. The password is hashed before it is stored. Row level security is on for `app_users`, and the Supabase API roles cannot read that table. The app connects with the database password from `.env`.
+
+Copy `.env.example` to `.env` and set `DATABASE_PASSWORD` and `SESSION_SECRET`. Do not commit `.env`.
+
+| Variable | What it is |
+|---|---|
+| `DATABASE_HOST` | Session pooler host. This network is IPv4-only, and the direct `db.<project>.supabase.co` host is IPv6 unless the project has the IPv4 add-on. |
+| `DATABASE_PORT` | `5432` for session mode. |
+| `DATABASE_NAME` | `postgres` |
+| `DATABASE_USER` | `postgres.<project-ref>` on the pooler. |
+| `DATABASE_PASSWORD` | The database password. |
+| `SESSION_SECRET` | A long random string used to sign the sign-in cookie. |
 
 ## Run the sample in the terminal
 

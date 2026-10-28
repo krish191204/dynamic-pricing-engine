@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --ground: #f2f4f7;
+      --surface: #ffffff;
+      --border: #e6e6e6;
+      --control: #d4d4d4;
+      --text: #0a0a0a;
+      --muted: #6b6b6b;
+      --accent: #141414;
+      --negative: #c4242a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font: 17px/1.45 "Geist", Inter, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--ground);
+    }
+    main {
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 72px 24px 40px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    p { margin: 0 0 20px; }
+    form {
+      display: grid;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+    }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+    input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--control);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: 17px/1.3 inherit;
+      color: inherit;
+      background: var(--surface);
+    }
+    input:focus-visible, button:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
+    .actions { display: flex; gap: 10px; margin-top: 4px; }
+    button {
+      min-height: 44px;
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 6px;
+      font: 500 15px/1 inherit;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: #fff; }
+    button.secondary { background: #eeeeee; color: var(--text); }
+    button:active { filter: brightness(0.95); }
+    .error { color: var(--negative); margin: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Sign in</h1>
+    <p>Use an email and a password. A new account is stored for the next visit.</p>
+    <form method="post" action="/login">
+      <!--ERROR-->
+      <label>Email
+        <input name="email" type="email" autocomplete="username" required />
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" minlength="8" required />
+      </label>
+      <div class="actions">
+        <button class="primary" type="submit" name="mode" value="login">Sign in</button>
+        <button class="secondary" type="submit" name="mode" value="signup">Create account</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>
