@@ -109,6 +109,8 @@ def login_submit(
     password: str = Form(""),
     mode: str = Form("login"),
 ):
+    if not storage_configured():
+        return RedirectResponse("/", status_code=303)
     try:
         user_id = create_account(email, password) if mode == "signup" else authenticate(email, password)
     except AuthError as exc:
