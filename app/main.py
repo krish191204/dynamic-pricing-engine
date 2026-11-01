@@ -35,7 +35,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Dynamic pricing and inventory engine", version="0.1.0", lifespan=lifespan)
 
 ROOT = Path(__file__).resolve().parents[1]
-SAMPLE = ROOT / "data" / "sample_sales.csv"
+SAMPLE = ROOT / "data" / "sample_oat.csv"
 UPLOADS = ROOT / "data" / "uploads"
 PAGE = Path(__file__).resolve().parent / "static" / "index.html"
 LOGIN_PAGE = Path(__file__).resolve().parent / "static" / "login.html"
@@ -148,13 +148,13 @@ def create_run(body: RunRequest, request: Request) -> dict:
         return _sign_in_required()
     pasted = (body.report_text or "").strip()
     # A paste or an upload wins over the sample checkbox. The sample file is
-    # jackets, and its prices must not be used for another product's cost.
+    # oat milk, and its prices must not be used for another product's cost.
     if pasted or (body.csv_path and not body.use_sample):
         body.use_sample = False
     if body.use_sample:
-        # The sample rows are JACKET-01. The typed name is put back on the dashboard after the run.
+        # The sample rows are OAT-1L. The typed name is put back on the dashboard after the run.
         csv_path = str(SAMPLE)
-        product_code = "JACKET-01"
+        product_code = "OAT-1L"
     elif body.report_text and body.report_text.strip():
         UPLOADS.mkdir(parents=True, exist_ok=True)
         # One shared file. Two people pasting at once overwrite each other.

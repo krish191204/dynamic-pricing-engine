@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.agents.base import Agent
 from app.context import RunContext
+from app.pricing_math import score_price
 
 
 class PricingAgent(Agent):
@@ -37,33 +38,24 @@ class PricingAgent(Agent):
                 continue
             move = (price - current) / current
             # A market price far from history is pulled back to a 20% step before scoring.
+            # The slider's curve does not use this cap. Only these four choices do.
             if abs(move) > 0.20:
                 price = round(current * (1 + 0.20 * (1 if move > 0 else -1)), 2)
-                move = (price - current) / current
             # drop is "sales fall this many percent if price rises 10%".
             # drop 0 means demand never moves, so the higher price always wins.
-            factor = 1 + move * (-drop / 10)
-            demand = max(0.0, forecast * factor)
-            # Sell only what demand can take before the stock loses its value. The rest is wasted.
-            if demand <= 0 or horizon <= 0:
-                sellable = min(ctx.stock_on_hand, demand)
-                wasted = ctx.stock_on_hand - sellable
-            else:
-                sellable = min(ctx.stock_on_hand, demand * horizon)
-                wasted = ctx.stock_on_hand - sellable
-            # Unsold stock past the horizon is a total loss at unit cost.
-            profit = (price - ctx.unit_cost) * sellable - ctx.unit_cost * wasted
-            options.append(
-                {
-                    "action": action,
-                    "price": round(price, 2),
-                    "demand": round(demand, 1),
-                    "sellable": round(sellable, 1),
-                    "wasted": round(wasted, 1),
-                    "profit": round(profit, 2),
-                    "below_cost": price < ctx.unit_cost,
-                }
+            scored = score_price(
+                price,
+                current,
+                forecast,
+                drop,
+                ctx.stock_on_hand,
+                ctx.unit_cost,
+                horizon,
             )
+            if scored is None:
+                continue
+            scored["action"] = action
+            options.append(scored)
         ctx.price_options = options
         # Cost more than 1.5 times the history price means the file and the form are different products.
         if current > 0 and ctx.unit_cost > current * 1.5:

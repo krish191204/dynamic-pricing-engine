@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.agents.base import Agent
 from app.context import RunContext
+from app.pricing_math import price_curve
 
 
 class DashboardAgent(Agent):
@@ -38,6 +39,15 @@ class DashboardAgent(Agent):
                 ctx.guardrail_notes.append("Override was lifted to unit cost.")
         ctx.approval_status = status
         ctx.price_action = action
+        curve = price_curve(
+            ctx.current_price,
+            ctx.forecast_units or 0,
+            ctx.sales_drop_percent if ctx.sales_drop_percent is not None else 0,
+            ctx.stock_on_hand,
+            ctx.unit_cost,
+            ctx.weeks_until_value_loss or 0,
+            anchors=[ctx.suggested_price, ctx.current_price, ctx.competitor_price],
+        )
         ctx.dashboard = {
             "status": status,
             "product_code": ctx.product_code,
@@ -67,6 +77,9 @@ class DashboardAgent(Agent):
             "competitor_price": ctx.competitor_price,
             "sales_drop_percent": ctx.sales_drop_percent,
             "price_options": ctx.price_options,
+            "price_curve": curve,
+            "stock_on_hand": ctx.stock_on_hand,
+            "unit_cost": ctx.unit_cost,
             "intake_note": ctx.intake_note,
         }
         self.note(ctx, f"view ready, approval {status}")

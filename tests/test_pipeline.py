@@ -40,6 +40,10 @@ def test_ten_agents_run_and_recommend_markdown_when_stock_is_high():
     assert board["inventory_alert"] == "clear"
     assert board["suggested_price"] >= 40
     assert board["status"] == "pending"
+    curve_point = next(point for point in board["price_curve"] if point["price"] == 70)
+    option = next(option for option in board["price_options"] if option["price"] == 70)
+    for key in ("demand", "sellable", "wasted", "profit", "below_cost"):
+        assert curve_point[key] == option[key]
 
 
 def test_cancelled_invoice_is_dropped():
@@ -134,3 +138,44 @@ def test_guardrail_blocks_price_below_cost(tmp_path: Path):
     )
     assert result["dashboard"]["suggested_price"] >= 12
     assert any("below unit cost" in note for note in result["dashboard"]["guardrails"])
+
+
+def test_oat_milk_sample_charges_the_market_and_leaves_fewer_units():
+    oat = Path(__file__).resolve().parents[1] / "data" / "sample_oat.csv"
+    result = analyse(
+        oat,
+        "OAT-1L",
+        stock_on_hand=200,
+        unit_cost=1.2,
+        weeks_until_value_loss=3,
+        competitor_price=2.10,
+        sales_drop_percent=20,
+    )
+    assert result["errors"] == []
+    assert len(result["agent_log"]) == 10
+    board = result["dashboard"]
+    assert len(board["history"]) == 16
+    assert board["forecast_units"] == 45.5
+    assert board["current_price"] == 2.6
+    assert board["price_action"] == "match_market"
+    assert board["suggested_price"] == 2.1
+    assert board["mape"] == 23.1
+    assert "weak guess" not in board["evaluation"]
+    assert board["inventory_alert"] == "clear"
+    hold = next(option for option in board["price_options"] if option["action"] == "hold")
+    match = next(option for option in board["price_options"] if option["action"] == "match_market")
+    assert match["profit"] == 156.9
+    assert hold["profit"] == 114.9
+    assert match["wasted"] == 11
+    assert hold["wasted"] == 63.5
+    assert match["profit"] > hold["profit"]
+    dropped = " ".join(board["dropped"])
+    assert "cancelled" in dropped
+    assert "ALMOND-1L" in dropped
+    curve_point = next(point for point in board["price_curve"] if point["price"] == 2.1)
+    for key in ("demand", "sellable", "wasted", "profit", "below_cost"):
+        assert curve_point[key] == match[key]
+    cheap = next(point for point in board["price_curve"] if point["price"] == 1.2)
+    assert cheap["price"] < board["current_price"] * 0.8
+    assert cheap["profit"] == 0
+    assert board["suggested_price"] == 2.1

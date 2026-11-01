@@ -188,7 +188,7 @@
     .loss { color: var(--negative); }
     .week {
       display: grid;
-      grid-template-columns: 96px 1fr 64px 56px;
+      grid-template-columns: 148px 1fr 64px 56px;
       gap: 8px;
       align-items: center;
       margin: 8px 0;
@@ -199,13 +199,26 @@
     .bar { height: 16px; background: var(--raised); border-radius: 2px; overflow: hidden; }
     .bar > span { display: block; height: 100%; background: var(--accent); }
     .week.latest .bar > span { background: var(--chart); }
+    .latest-word { display: none; font-style: normal; color: var(--chart); margin-left: 6px; font-size: 12px; }
+    .week.latest .latest-word { display: inline; }
+    .decision { margin: 8px 0 12px; max-width: 62ch; font-size: 18px; line-height: 1.4; }
+    .response { width: 100%; height: auto; display: block; margin: 8px 0; }
+    .try { margin-top: 8px; }
+    input[type="range"] {
+      padding: 12px 0;
+      border: 0;
+      background: transparent;
+      min-height: 44px;
+      accent-color: var(--text);
+    }
+    #try-readout { margin: 4px 0 12px; max-width: 62ch; }
     ul.problems { margin: 8px 0 0; padding-left: 18px; }
     ul.problems li { margin: 8px 0; }
     @media (max-width: 640px) {
       .wrap { padding: 16px; }
       h2 { font-size: 26px; }
       .figure { font-size: 40px; }
-      .week { grid-template-columns: 78px 1fr 48px 44px; }
+      .week { grid-template-columns: 112px 1fr 48px 44px; }
     }
   </style>
 </head>
@@ -227,17 +240,17 @@
       <section class="step" data-step="product">
         <p class="kicker">1 of 8 · The product</p>
         <h2>Which product is this?</h2>
-        <p class="ask">Name it, then give its sales. A file, a pasted table, or the built-in sample.</p>
+        <p class="ask">Name it, then give its sales. A file, a pasted table, or the oat milk example.</p>
         <div class="fields">
-          <label>Product code<input name="product_code" placeholder="JACKET-01" required autocomplete="off" /></label>
+          <label>Product code<input name="product_code" placeholder="OAT-1L" required autocomplete="off" /></label>
           <label class="file">Sales report
             <input name="sales_file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" />
             <span class="file-name" id="file-name">Choose a CSV, TSV, or text file</span>
           </label>
           <label>Or paste the table<textarea name="report_text" placeholder="date, product, price, quantity"></textarea></label>
-          <label class="check"><input name="use_sample" type="checkbox" /> Use the built-in jacket sample</label>
+          <label class="check"><input name="use_sample" type="checkbox" /> Use the oat milk example</label>
         </div>
-        <p class="hint">Title rows are skipped. The code has to match a code in the file. Decimals are fine.</p>
+        <p class="hint">Ticking the example fills stock 200, cost 1.20, 3 weeks, a market price of 2.10, and a 20% sales fall. Title rows are skipped. The code has to match a code in the file.</p>
       </section>
 
       <section class="step" data-step="stock" hidden>
@@ -266,7 +279,7 @@
       <section class="step" data-step="sales" data-read="true" hidden>
         <p class="kicker">4 of 8 · Sales</p>
         <h2>What sold</h2>
-        <p class="ask">Each bar is one week. The latest week is blue.</p>
+        <p class="ask">Each bar is one week. The latest week is marked Latest.</p>
         <div id="sales-body"></div>
       </section>
 
@@ -280,7 +293,7 @@
       <section class="step" data-step="price" data-read="true" hidden>
         <p class="kicker">6 of 8 · Price</p>
         <h2>What to charge</h2>
-        <p class="ask">Four prices. The marked row is the highest profit. Nothing in the shop changes.</p>
+        <p class="ask">The number is what to charge. Move the slider to see what another price would do. Nothing in the shop changes.</p>
         <div id="price-body"></div>
       </section>
 
@@ -347,7 +360,19 @@
       fileName.textContent = file ? file.name : "Choose a CSV, TSV, or text file";
     });
 
-    form.addEventListener("input", () => {
+    form.use_sample.addEventListener("change", () => {
+      if (!form.use_sample.checked) return;
+      form.product_code.value = "OAT-1L";
+      form.stock_on_hand.value = "200";
+      form.unit_cost.value = "1.2";
+      form.weeks_until_value_loss.value = "3";
+      form.competitor_price.value = "2.1";
+      form.sales_drop_percent.value = "20";
+      form.stated_price.value = "";
+    });
+
+    form.addEventListener("input", (event) => {
+      if (event.target && event.target.id === "try-price") return;
       if (!board) return;
       board = null;
       runError.hidden = true;
@@ -365,6 +390,185 @@
       const n = Number(value);
       if (!Number.isFinite(n)) return escapeHtml(value);
       return n.toLocaleString("en-GB", { maximumFractionDigits: 2 });
+    }
+
+    function money(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "–";
+      return n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function unitsPhrase(value) {
+      const n = Number(value);
+      const word = Math.abs(n - 1) < 0.05 ? "unit" : "units";
+      return `${num(n)} ${word}`;
+    }
+
+    function historySentence(history) {
+      if (!history || history.length < 2) return "";
+      const mid = Math.ceil(history.length / 2);
+      const avg = (rows, key) => rows.reduce((sum, row) => sum + (Number(row[key]) || 0), 0) / rows.length;
+      const early = history.slice(0, mid);
+      const late = history.slice(mid);
+      const qtyDown = avg(late, "quantity") < avg(early, "quantity") * 0.9;
+      const qtyUp = avg(late, "quantity") > avg(early, "quantity") * 1.1;
+      const priceUp = avg(late, "avg_price") > avg(early, "avg_price") * 1.02;
+      const priceDown = avg(late, "avg_price") < avg(early, "avg_price") * 0.98;
+      if (qtyDown && priceUp) return "Sales fell as the shelf price rose.";
+      if (qtyUp && priceDown) return "Sales rose as the shelf price fell.";
+      if (qtyDown && priceDown) return "Sales fell even though the shelf price came down.";
+      if (qtyUp && priceUp) return "Sales rose even though the shelf price went up.";
+      return "Sales and the shelf price stayed in a similar range.";
+    }
+
+    function nearest(curve, price) {
+      if (!curve.length || price === null || price === undefined) return null;
+      return curve.reduce((best, point) => (
+        Math.abs(point.price - price) < Math.abs(best.price - price) ? point : best
+      ));
+    }
+
+    function moneyClause(point) {
+      const profit = Number(point.profit);
+      if (profit < 0) return `you lose about ${money(Math.abs(profit))}`;
+      if (profit === 0) return "you make nothing";
+      return `you make about ${money(profit)}`;
+    }
+
+    function leftClause(point) {
+      return Number(point.wasted) > 0.05 ? `about ${unitsPhrase(point.wasted)} are left` : "nothing is left over";
+    }
+
+    function decisionText(suggested, current) {
+      if (!suggested) return "";
+      if (suggested.below_cost) {
+        return `Charge ${money(suggested.price)}. You lose money on every unit you sell.`;
+      }
+      let line = `Charge ${money(suggested.price)}. About ${unitsPhrase(suggested.sellable)} sell before the stock goes off, ${leftClause(suggested)}, and ${moneyClause(suggested)}.`;
+      if (current && Math.abs(Number(current.price) - Number(suggested.price)) >= 0.005) {
+        line += current.below_cost
+          ? ` At last week's price, ${money(current.price)}, you lose money on every unit you sell.`
+          : ` At last week's price, ${money(current.price)}, ${leftClause(current)} and ${moneyClause(current)}.`;
+      }
+      return line;
+    }
+
+    function tryText(point, suggestedPrice) {
+      if (!point) return "";
+      if (Math.abs(Number(point.price) - Number(suggestedPrice)) < 0.005) return "This is the suggested price.";
+      const line = point.below_cost
+        ? `At ${money(point.price)} you lose money on every unit you sell.`
+        : `At ${money(point.price)}, about ${unitsPhrase(point.sellable)} sell before the stock goes off, ${leftClause(point)}, and ${moneyClause(point)}.`;
+      return `${line} The suggested price stays ${money(suggestedPrice)}.`;
+    }
+
+    function responseChart(curve, suggestedPrice, activePrice, label) {
+      const width = 640;
+      const height = 250;
+      const padL = 8;
+      const padR = 12;
+      const plotTop = 22;
+      const plotBottom = 156;
+      const wasteTop = 186;
+      const wasteBottom = 222;
+      const profits = curve.map((point) => Number(point.profit));
+      const minPrice = Math.min(...curve.map((point) => Number(point.price)));
+      const maxPrice = Math.max(...curve.map((point) => Number(point.price)));
+      const minProfit = Math.min(0, ...profits);
+      const maxProfit = Math.max(0, ...profits, 1);
+      const maxWaste = Math.max(...curve.map((point) => Number(point.wasted)), 1);
+      const xOf = (price) => padL + ((price - minPrice) / (maxPrice - minPrice || 1)) * (width - padL - padR);
+      const yOf = (profit) => plotTop + (1 - (profit - minProfit) / (maxProfit - minProfit || 1)) * (plotBottom - plotTop);
+      const line = curve.map((point) => `${xOf(point.price).toFixed(1)},${yOf(point.profit).toFixed(1)}`).join(" ");
+      const bars = curve.map((point) => {
+        const barHeight = (Number(point.wasted) / maxWaste) * (wasteBottom - wasteTop);
+        const barWidth = Math.max(3, ((width - padL - padR) / curve.length) * 0.55);
+        const x = xOf(point.price) - barWidth / 2;
+        return `<rect x="${x.toFixed(1)}" y="${(wasteBottom - barHeight).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${Math.max(barHeight, 0).toFixed(1)}" fill="#6b6b6b"></rect>`;
+      }).join("");
+      const suggestedX = xOf(Number(suggestedPrice));
+      const active = nearest(curve, activePrice);
+      const labelOnLeft = suggestedX > width - 96;
+      return `<svg class="response" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(label)}">
+        <text x="${padL}" y="14" fill="#6b6b6b" font-size="12" font-family="Geist, system-ui, sans-serif">Profit ${money(maxProfit)}</text>
+        <line x1="${padL}" y1="${yOf(0).toFixed(1)}" x2="${width - padR}" y2="${yOf(0).toFixed(1)}" stroke="#e6e6e6"></line>
+        <polyline points="${line}" fill="none" stroke="#0a0a0a" stroke-width="2"></polyline>
+        <line x1="${suggestedX.toFixed(1)}" y1="${plotTop}" x2="${suggestedX.toFixed(1)}" y2="${wasteBottom}" stroke="#1d5fbf" stroke-dasharray="3 3"></line>
+        <text x="${(labelOnLeft ? suggestedX - 6 : suggestedX + 6).toFixed(1)}" y="${plotTop + 14}" fill="#1d5fbf" font-size="12" font-family="Geist, system-ui, sans-serif" text-anchor="${labelOnLeft ? "end" : "start"}">Suggested</text>
+        <circle cx="${xOf(active.price).toFixed(1)}" cy="${yOf(active.profit).toFixed(1)}" r="5" fill="#0a0a0a" stroke="#ffffff" stroke-width="2"></circle>
+        <text x="${padL}" y="178" fill="#6b6b6b" font-size="12" font-family="Geist, system-ui, sans-serif">Units left</text>
+        ${bars}
+        ${minProfit < 0 ? `<text x="${padL}" y="${plotBottom + 12}" fill="#6b6b6b" font-size="11" font-family="Geist, system-ui, sans-serif">${money(minProfit)}</text>` : ""}
+        <text x="${padL}" y="242" fill="#6b6b6b" font-size="12" font-family="Geist, system-ui, sans-serif">${money(minPrice)}</text>
+        <text x="${width - padR}" y="242" fill="#6b6b6b" font-size="12" font-family="Geist, system-ui, sans-serif" text-anchor="end">${money(maxPrice)}</text>
+      </svg>`;
+    }
+
+    function bindSlider(curve, suggested) {
+      const input = document.querySelector("#try-price");
+      const now = document.querySelector("#try-now");
+      const readout = document.querySelector("#try-readout");
+      const chartHost = document.querySelector("#response-chart");
+      if (!input || !chartHost) return;
+      const draw = () => {
+        const point = curve[Number(input.value)] || curve[0];
+        const current = nearest(curve, board.current_price);
+        const decision = decisionText(suggested, current);
+        const trying = tryText(point, suggested.price);
+        if (now) now.textContent = money(point.price);
+        if (readout) readout.textContent = trying;
+        input.setAttribute("aria-valuetext", trying);
+        chartHost.innerHTML = responseChart(curve, suggested.price, point.price, decision);
+      };
+      input.addEventListener("input", (event) => {
+        event.stopPropagation();
+        draw();
+      });
+      draw();
+    }
+
+    function fillPrice() {
+      const curve = board.price_curve || [];
+      const suggested = nearest(curve, board.suggested_price);
+      const current = nearest(curve, board.current_price);
+      const weak = board.mape != null && Number(board.mape) >= 50;
+      const drop = Number(board.sales_drop_percent);
+      const rule = drop === 0
+        ? "You said sales do not change when the price changes. The line uses that."
+        : `A 10% higher price cuts sales by ${num(drop)}%. That is the number you typed. The line uses that, and nothing else.`;
+      const decision = suggested
+        ? decisionText(suggested, current)
+        : `Charge ${money(board.suggested_price)}.`;
+      const start = curve.reduce((best, point, i) => (
+        Math.abs(point.price - Number(board.suggested_price)) < Math.abs(curve[best].price - Number(board.suggested_price)) ? i : best
+      ), 0);
+      const options = (board.price_options || []).map((option) => {
+        const chosen = option.action === (board.price_action || "");
+        const loss = Number(option.profit) < 0 ? " loss" : "";
+        const name = names[option.action] || option.action;
+        return `<tr class="${chosen ? "chosen" : ""}"><td>${escapeHtml(name)}${chosen ? ' <span class="tag">Chosen</span>' : ""}</td><td class="num">${money(option.price)}</td><td class="num">${num(option.demand)}</td><td class="num${loss}">${money(option.profit)}</td></tr>`;
+      }).join("");
+      const moved = (board.guardrails || []).filter((note) => !note.startsWith("Price stays above cost"));
+      document.querySelector("#price-body").innerHTML = `
+        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "This sketch is rough.")}</p>` : ""}
+        <p class="kicker">Suggested price</p>
+        <p class="figure">${money(board.suggested_price)}</p>
+        <p class="decision" id="decision">${escapeHtml(decision)}</p>
+        <p class="quiet">${escapeHtml(rule)}</p>
+        ${curve.length ? `<div id="response-chart"></div>
+          <p class="quiet">The line is profit. The bars are units left when the stock goes off. The dashed line is the suggested price, and it does not move.</p>
+          <label class="try" for="try-price">Try another price <span id="try-now"></span>
+            <input id="try-price" type="range" min="0" max="${curve.length - 1}" step="1" value="${start}" aria-describedby="decision" />
+          </label>
+          <p id="try-readout"></p>` : ""}
+        ${moved.map((note) => `<p class="quiet">${escapeHtml(note)}</p>`).join("")}
+        <p class="kicker">Prices that were checked</p>
+        <table>
+          <thead><tr><th>Choice</th><th class="num">Price</th><th class="num">Demand</th><th class="num">Profit</th></tr></thead>
+          <tbody>${options}</tbody>
+        </table>
+        <p class="quiet">${escapeHtml(board.pricing_reason || "")}</p>`;
+      if (curve.length && suggested) bindSlider(curve, suggested);
     }
 
     function paint() {
@@ -420,19 +624,18 @@
         const quantity = Number(week.quantity) || 0;
         const width = quantity <= 0 ? 0 : Math.max(4, (quantity / maxQty) * 100);
         const latest = i === history.length - 1 ? " latest" : "";
-        return `<div class="week${latest}"><span>${escapeHtml(week.week)}</span><span class="bar"><span style="width:${width}%"></span></span><span class="num">${num(week.quantity)}</span><span class="num">${num(week.avg_price)}</span></div>`;
+        return `<div class="week${latest}"><span>${escapeHtml(week.week)}<i class="latest-word">Latest</i></span><span class="bar"><span style="width:${width}%"></span></span><span class="num">${num(week.quantity)}</span><span class="num">${num(week.avg_price)}</span></div>`;
       }).join("");
       return `<div class="week head"><span>Week</span><span></span><span class="num">Units</span><span class="num">Price</span></div>${rows}`;
     }
 
     function fillResults() {
-      const action = board.price_action || "";
-      const label = names[action] || action.replaceAll("_", " ");
-      const headline = action === "hold" ? `Hold at ${num(board.suggested_price)}` : `${label} to ${num(board.suggested_price)}`;
       const history = board.history || [];
       const last = history[history.length - 1];
       const weak = board.mape != null && Number(board.mape) >= 50;
+      const story = historySentence(history);
       document.querySelector("#sales-body").innerHTML = `
+        ${story ? `<p>${escapeHtml(story)}</p>` : ""}
         <p>${history.length} weeks${last ? `. The latest sold ${num(last.quantity)} at ${num(last.avg_price)}.` : ""}</p>
         ${weeksHtml(history)}
         <p class="quiet">${escapeHtml(board.intake_note || "")}</p>`;
@@ -441,19 +644,7 @@
         <p>${escapeHtml(board.forecast_method || "")}.</p>
         <p>${board.mape == null ? `Price now is ${num(board.current_price)}. There are not enough weeks for a miss.` : `Last-week miss is ${num(board.mape)}%.`}</p>
         ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p class="quiet">${escapeHtml(board.evaluation || "")}</p>`}`;
-      const options = (board.price_options || []).map((option) => {
-        const chosen = option.action === action;
-        const loss = Number(option.profit) < 0 ? " loss" : "";
-        const name = names[option.action] || option.action;
-        return `<tr class="${chosen ? "chosen" : ""}"><td>${escapeHtml(name)}${chosen ? ' <span class="tag">Chosen</span>' : ""}</td><td class="num">${num(option.price)}</td><td class="num">${num(option.demand)}</td><td class="num${loss}">${num(option.profit)}</td></tr>`;
-      }).join("");
-      document.querySelector("#price-body").innerHTML = `
-        <p class="figure">${escapeHtml(headline)}</p>
-        <p>${escapeHtml(board.pricing_reason || "")}</p>
-        <table>
-          <thead><tr><th>Choice</th><th class="num">Price</th><th class="num">Demand</th><th class="num">Profit</th></tr></thead>
-          <tbody>${options}</tbody>
-        </table>`;
+      fillPrice();
       const alert = board.inventory_alert || "review";
       document.querySelector("#cover-body").innerHTML = `
         <p class="figure">${num(board.weeks_of_cover)}</p>

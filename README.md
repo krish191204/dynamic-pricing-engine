@@ -71,7 +71,7 @@ That prints the dashboard for `data/sample_sales.csv`, product `JACKET-01`, stoc
 python3 -m pytest tests -q
 ```
 
-Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the sample file.
+Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, the oat milk example, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_pricing_math.py` checks that a slider point uses the same profit as the four choices. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the jacket file.
 
 ## Fill in the form
 
@@ -88,7 +88,7 @@ Every number may be a decimal. Empty required fields are named before anything i
 | Price now, if the report has no price | Used only when the table has dates and quantities, and neither a unit price nor a sales amount. |
 | Sales report | A `.csv`, `.tsv`, or `.txt` file. |
 | Or paste the table | The same kind of table, including the header row. |
-| Use the built-in sample instead | Uses `data/sample_sales.csv`. |
+| Use the oat milk example | Uses `data/sample_oat.csv`. Ticking it on the page fills stock 200, cost 1.20, 3 weeks, market price 2.10, and a 20% sales fall. |
 
 History is chosen in this order:
 
@@ -96,20 +96,22 @@ History is chosen in this order:
 2. Otherwise the chosen file, if there is one.
 3. Otherwise the sample, and only when the box is ticked.
 
-The sample rows are jackets (`JACKET-01`, prices around 80 to 85). After the run, the page shows the product name you typed, but the history is still the jacket file. If that jacket price and your unit cost cannot be the same product, the run stops. Untick the sample when you paste or upload your own table.
+The sample on the page is oat milk (`OAT-1L`, shelf prices from 1.90 to 2.60). After the run, the page shows the product name you typed, but the history is still that file. If the file price and your unit cost cannot be the same product, the run stops. Untick the example when you paste or upload your own table. `python3 -m app` still prints the jacket file, `data/sample_sales.csv`.
 
 ## Read the result
 
 A finished run shows:
 
 - The product code as it is spelled in the file.
-- A headline: hold, mark down 15%, raise 10%, or match the market. The market price is pulled back to a 20% step when it is farther than that from the latest week.
-- The sentence that names the profit of the chosen price.
-- A pink caution when the hold-out miss is 50% or more. The headline is still the price. Read the caution before you treat the price as final.
+- One sentence: the price to charge, how many units sell before the stock goes off, how many are left, the money, and the same figures at last week's price.
+- One graph. The line is profit. The bars are units left. A dashed line marks the suggested price.
+- A slider from unit cost upward. Dragging it shows what another price would do. The suggested price stays where it is. Nothing is written to a till.
+- A pink caution when the hold-out miss is 50% or more, placed before that graph.
+- A plain line that the reaction uses the sales-fall percent you typed.
 - Next week's forecast, weeks of cover, and either the miss on the latest week or the current price when there are only four weeks.
 - The stock sentence: reorder, clear, or ok.
-- A table of the four prices, with demand and profit. The chosen row is marked. A negative profit is shown in red.
-- One bar per week. The latest week is marked. The label under the chart is the four quantities that were averaged.
+- A table of the four prices, with demand and profit. The chosen row is marked. A negative profit is shown in red. The market price is pulled back to a 20% step when it is farther than that from the latest week. The slider is not pulled back.
+- One bar per week, and one sentence about whether sales and the shelf price moved together. The latest week is marked Latest.
 - Problems found while reading the file: warnings, then dropped rows.
 - A note of which columns were used, and how many rows were skipped.
 
@@ -161,6 +163,8 @@ Week ending	Units sold	Sales
 ```
 
 ## Files in `data/`
+
+`data/sample_oat.csv` is a made-up oat milk history, one row per Monday from 2025-06-02 to 2025-09-15. Columns are `date,product,price,quantity,invoice`. Quantities fall from 95 to 40 while the price rises from 1.90 to 2.60. It includes one cancelled oat invoice (`C900`, quantity −3) and one almond row (`ALMOND-1L`). Both are dropped when the product is `OAT-1L`. The forecast uses the last four quantities: (50 + 48 + 44 + 40) / 4 = 45.5. The latest week is priced at 2.60. With stock 200, unit cost 1.20, 3 weeks until the milk goes off, market price 2.10, and a 20% sales fall, the run matches the market at 2.10. That sells about 189 units, leaves 11, and makes 156.90. Holding 2.60 leaves 63.5 and makes 114.90. The same average, checked on the latest week, is off by 23.1%.
 
 `data/sample_sales.csv` is a made-up jacket history. Columns are `date,product,price,quantity,invoice`. It includes one cancelled jacket invoice (`C1015`, quantity −5) and one hat row (`HAT-02`). Both are dropped when the product is `JACKET-01`. Weekly totals, Monday to Sunday, for the jacket are 160, 140, 140, 120, 70, 45, 25. The forecast uses the last four: (120 + 70 + 45 + 25) / 4 = 65. The latest week is priced at 85.
 
@@ -242,6 +246,8 @@ next-week demand = max(0, forecast × demand factor)
 
 A 10% rise with a sales fall of 15 gives a factor of 0.85. A 15% markdown with the same 15 gives a factor of 1.225. A sales fall of 0 leaves demand unchanged at every price, so the higher legal price wins.
 
+The slider uses the same function (`app/pricing_math.py`) at prices from unit cost up to a little above the shelf price. A stop that lands on one of the four choices shows the same profit as the table. Those in-between prices are not pulled back to 20%. The 20% cap still applies to the suggested price only.
+
 Units that can be sold before the stock loses value:
 
 ```text
@@ -295,12 +301,12 @@ The server binds to your machine only when you use `--host 127.0.0.1`. Do not pu
 
 ```json
 {
-  "product_code": "JACKET-01",
-  "stock_on_hand": 400,
-  "unit_cost": 40,
-  "weeks_until_value_loss": 4,
-  "competitor_price": 70,
-  "sales_drop_percent": 15,
+  "product_code": "OAT-1L",
+  "stock_on_hand": 200,
+  "unit_cost": 1.2,
+  "weeks_until_value_loss": 3,
+  "competitor_price": 2.1,
+  "sales_drop_percent": 20,
   "stated_price": null,
   "csv_path": null,
   "report_text": null,
@@ -309,7 +315,7 @@ The server binds to your machine only when you use `--host 127.0.0.1`. Do not pu
 }
 ```
 
-`use_sample: true` reads `data/sample_sales.csv` and runs it as `JACKET-01`, then writes your `product_code` onto the dashboard. A non-empty `report_text` or a `csv_path` turns the sample off. Pasted text is saved to `data/uploads/pasted-report.txt` and that path is analysed.
+`use_sample: true` reads `data/sample_oat.csv` and runs it as `OAT-1L`, then writes your `product_code` onto the dashboard. A non-empty `report_text` or a `csv_path` turns the sample off. Pasted text is saved to `data/uploads/pasted-report.txt` and that path is analysed. To run the jacket file over HTTP, pass `data/sample_sales.csv` as `csv_path` and leave `use_sample` false. Sending the old jacket cost with `use_sample: true` stops the run, because 40 is not the cost of milk priced around 2.60.
 
 A success body has three keys:
 
@@ -337,6 +343,8 @@ A success body has three keys:
 | `suggested_price` | Price after the guardrail |
 | `pricing_reason` | Why that price won |
 | `price_options` | Each choice: `action`, `price`, `demand`, `sellable`, `wasted`, `profit`, `below_cost` |
+| `price_curve` | The same fields, without `action`, from unit cost up to a little above the shelf price. The slider draws this. |
+| `stock_on_hand`, `unit_cost` | The numbers you sent |
 | `inventory_alert` | `reorder`, `clear`, `ok`, or `review` |
 | `inventory_reason` | The cover sentence |
 | `weeks_of_cover` | Stock / forecast, or null |
@@ -396,8 +404,10 @@ app/orchestrator.py         Runs the ten agents
 app/context.py              RunContext, SalesRow, WeekPoint
 app/intake.py               Header detection, dates, numbers
 app/agents/                 One file per agent
+app/pricing_math.py         The profit score shared by the four choices and the slider
 app/static/index.html       The whole page, with no build step
-data/sample_sales.csv       Jacket sample
+data/sample_oat.csv         Oat milk example used by the page
+data/sample_sales.csv       Jacket sample used by `python3 -m app`
 data/flawed_sales.csv       Bread file with known data problems
 tests/                      Pipeline and intake tests
 docs/PLAN.md                Dates and what is still to build
