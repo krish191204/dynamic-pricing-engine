@@ -19,6 +19,7 @@ from app.auth import (
     ensure_schema,
     read_session,
     sign_session,
+    storage_configured,
 )
 from app.orchestrator import run_analysis
 
@@ -60,6 +61,12 @@ def _user_id(request: Request) -> int | None:
     return read_session(request.cookies.get(COOKIE))
 
 
+def _signed_in(request: Request) -> bool:
+    if not storage_configured():
+        return True
+    return _user_id(request) is not None
+
+
 def _sign_in_required() -> JSONResponse:
     return JSONResponse({"errors": ["Sign in again."]}, status_code=401)
 
@@ -90,7 +97,7 @@ def health() -> dict:
 
 @app.get("/login")
 def login_form(request: Request):
-    if _user_id(request) is not None:
+    if not storage_configured() or _user_id(request) is not None:
         return RedirectResponse("/", status_code=303)
     return _login_html()
 
@@ -111,30 +118,32 @@ def login_submit(
 
 @app.post("/logout")
 def logout() -> RedirectResponse:
-    response = RedirectResponse("/login", status_code=303)
+    response = RedirectResponse("/" if not storage_configured() else "/login", status_code=303)
     response.delete_cookie(COOKIE, path="/")
     return response
 
 
 @app.get("/me")
 def me(request: Request):
+    if not storage_configured():
+        return {"email": None, "sign_in": False}
     user_id = _user_id(request)
     email = email_for(user_id) if user_id is not None else None
     if not email:
         return _sign_in_required()
-    return {"email": email}
+    return {"email": email, "sign_in": True}
 
 
 @app.get("/")
 def home(request: Request):
-    if _user_id(request) is None:
+    if not _signed_in(request):
         return RedirectResponse("/login", status_code=303)
     return FileResponse(PAGE)
 
 
 @app.post("/uploads")
 async def upload(request: Request, file: UploadFile = File(...)) -> dict:
-    if _user_id(request) is None:
+    if not _signed_in(request):
         return _sign_in_required()
     UPLOADS.mkdir(parents=True, exist_ok=True)
     dest = UPLOADS / Path(file.filename or "upload.csv").name
@@ -144,7 +153,7 @@ async def upload(request: Request, file: UploadFile = File(...)) -> dict:
 
 @app.post("/runs")
 def create_run(body: RunRequest, request: Request) -> dict:
-    if _user_id(request) is None:
+    if not _signed_in(request):
         return _sign_in_required()
     pasted = (body.report_text or "").strip()
     # A paste or an upload wins over the sample checkbox. The sample file is

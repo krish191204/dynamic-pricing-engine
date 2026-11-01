@@ -96,10 +96,17 @@ def read_session(token: str | None) -> int | None:
         return None
 
 
+def storage_configured() -> bool:
+    """False on Vercel until the database variables are set in the project."""
+    password = os.environ.get("DATABASE_PASSWORD") or ""
+    host = os.environ.get("DATABASE_HOST") or ""
+    secret = os.environ.get("SESSION_SECRET") or ""
+    return bool(password and host and len(secret) >= 16)
+
+
 def _require_config() -> None:
-    if not os.environ.get("DATABASE_PASSWORD") or not os.environ.get("DATABASE_HOST"):
+    if not storage_configured():
         raise AuthError("Sign-in storage is not configured.")
-    _secret()
 
 
 def connect():

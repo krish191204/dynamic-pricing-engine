@@ -340,6 +340,8 @@
       const me = await response.json();
       const who = document.querySelector("#who");
       if (who) who.textContent = me.email || "";
+      const out = document.querySelector(".out");
+      if (out && !me.email) out.hidden = true;
     });
 
     labels.forEach((label, i) => {

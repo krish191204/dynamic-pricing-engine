@@ -4,7 +4,7 @@ One product goes in. Three answers come out: how many units to expect next week,
 
 Phase 1 is the part that runs today: a sales history you already have, numbers you type for stock and the market, and a recommendation on one page. Competitor feeds, automatic price changes, a forecast other than a four-week average, and several products in one run are later work. They are listed in [docs/PLAN.md](docs/PLAN.md).
 
-The page asks you to sign in. An account is an email and a password. The password is stored as a hash in Postgres (`app_users`). A run is still not saved after you refresh.
+The page asks you to sign in when a database is configured. An account is an email and a password. The password is stored as a hash in Postgres (`app_users`). A run is still not saved after you refresh. A Vercel deploy has no `.env` file, so the live site opens the pricing page without a login until those names are set in the Vercel project.
 
 ## What you need
 
@@ -44,9 +44,9 @@ A healthy process returns `{"status":"ok","agents":10}`.
 
 ## Sign in
 
-Opening the page sends you to `/login`. Sign in, or create an account with the second button. The password is hashed before it is stored. Row level security is on for `app_users`, and the Supabase API roles cannot read that table. The app connects with the database password from `.env`.
+Opening the page sends you to `/login` when `DATABASE_HOST`, `DATABASE_PASSWORD`, and `SESSION_SECRET` are set. Sign in, or create an account with the second button. The password is hashed before it is stored. Row level security is on for `app_users`, and the Supabase API roles cannot read that table.
 
-Copy `.env.example` to `.env` and set `DATABASE_PASSWORD` and `SESSION_SECRET`. Do not commit `.env`.
+Copy `.env.example` to `.env` for a local machine. Do not commit `.env`. On Vercel, set the same names in the project environment if you want the login wall on the live site. Without them, the oat milk page still runs.
 
 | Variable | What it is |
 |---|---|
