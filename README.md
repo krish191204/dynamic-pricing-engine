@@ -1,8 +1,8 @@
 # Dynamic pricing and predictive inventory engine
 
-One product goes in. Three answers come out: how many units to expect next week, a price to hold, mark down, raise, or match, and a stock alert (reorder, clear, or ok). A person still has to approve the price. This program does not change a live shop, a till, or a website.
+This program stands in for a pricing person a small or mid-size shop cannot hire. One product goes in. Three answers come out: how many units to expect next week, a price to hold, mark down, raise, or match, and a stock alert (reorder, clear, or ok). Under those answers the page writes the arithmetic, plus a factor-desk score of the same weeks (coverage, Rank IC, ICIR, Q5−Q1, no lookahead), using the QuantSkills checklist on this SKU rather than on stocks. A person still has to approve the price. Nothing is written to a till.
 
-Phase 1 is the part that runs today: a sales history you already have, numbers you type for stock and the market, and a recommendation on one page. Competitor feeds, automatic price changes, a forecast other than a four-week average, and several products in one run are later work. They are listed in [docs/PLAN.md](docs/PLAN.md).
+Phase 1 is the part that runs today: a sales history you already have, numbers you type for stock and the market, and a recommendation on one page. The suggested price still uses the four-week mean and the sales-fall percent you typed, so you can check it with a calculator. Competitor feeds, automatic price changes, a forecast other than that mean, and several products in one run are later work. They are listed in [docs/PLAN.md](docs/PLAN.md).
 
 There is no sign-in. Opening the site is the wizard. A run is still not saved after you refresh.
 
@@ -58,7 +58,7 @@ That prints the dashboard for `data/sample_sales.csv`, product `JACKET-01`, stoc
 python3 -m pytest tests -q
 ```
 
-Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, the real UCI hanging-heart extract, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_pricing_math.py` checks that a slider point uses the same profit as the four choices. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the jacket file.
+Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, the real UCI hanging-heart extract, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_pricing_math.py` checks that a slider point uses the same profit as the four choices. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the jacket file. `tests/test_factor_desk.py` checks Spearman ranks, the no-lookahead target, and that the jacket goldens still hold when the workbook is attached.
 
 ## Fill in the form
 
@@ -392,11 +392,14 @@ app/context.py              RunContext, SalesRow, WeekPoint
 app/intake.py               Header detection, dates, numbers
 app/agents/                 One file per agent
 app/pricing_math.py         The profit score shared by the four choices and the slider
+app/workbook.py             Plain-language working for the page
+app/factor_desk.py          Rank IC / ICIR / Q5−Q1 on this product's weeks
 app/static/index.html       The whole page, with no build step
 data/uci_85123A.csv         Real UCI extract used by the page
 data/sample_sales.csv       Jacket sample used by `python3 -m app`
 data/flawed_sales.csv       Bread file with known data problems
-tests/                      Pipeline and intake tests
+tests/                      Pipeline, intake, pricing math, and factor-desk tests
+.github/workflows/tests.yml Pytest on every push to main
 docs/DATA.md                Citation for the UCI extract
 docs/PLAN.md                Dates and what is still to build
 docs/TEAM.md                Who owns which agent

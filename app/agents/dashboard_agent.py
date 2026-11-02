@@ -9,6 +9,7 @@ from __future__ import annotations
 from app.agents.base import Agent
 from app.context import RunContext
 from app.pricing_math import price_curve
+from app.workbook import explain_run
 
 
 class DashboardAgent(Agent):
@@ -81,6 +82,7 @@ class DashboardAgent(Agent):
             "stock_on_hand": ctx.stock_on_hand,
             "unit_cost": ctx.unit_cost,
             "intake_note": ctx.intake_note,
+            "workbook": explain_run(ctx),
         }
         self.note(ctx, f"view ready, approval {status}")
         return ctx

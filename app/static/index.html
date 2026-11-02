@@ -173,6 +173,14 @@
     tr.chosen td:first-child { border-left: 3px solid var(--chart); padding-left: 8px; }
     .tag { color: var(--chart); font-size: 12px; margin-left: 6px; }
     .loss { color: var(--negative); }
+    .work {
+      margin: 16px 0 0;
+      padding: 12px 14px;
+      background: var(--raised);
+      border-radius: var(--radius-control);
+    }
+    .work ol { margin: 8px 0 0; padding-left: 18px; }
+    .work li { margin: 8px 0; max-width: 62ch; }
     .week {
       display: grid;
       grid-template-columns: 148px 1fr 64px 56px;
@@ -250,13 +258,13 @@
       <section class="step" data-step="market" hidden>
         <p class="kicker">3 of 8 · The market</p>
         <h2>What is the market doing?</h2>
-        <p class="ask">A price you can see now, and how far sales fall if your price rises 10%.</p>
+        <p class="ask">A price you can see now, and your guess of how far sales fall if your price rises 10%. After the run we also read that same idea off your weeks, and show both.</p>
         <div class="fields">
           <label>Market price now<input name="competitor_price" type="number" min="0.01" step="any" inputmode="decimal" required /></label>
-          <label>Sales fall if price rises 10%<input name="sales_drop_percent" type="number" min="0" step="any" inputmode="decimal" required /></label>
+          <label>Your guess: sales fall if price rises 10%<input name="sales_drop_percent" type="number" min="0" step="any" inputmode="decimal" required /></label>
           <label>Price now, if the report has no price<input name="stated_price" type="number" min="0.01" step="any" inputmode="decimal" /></label>
         </div>
-        <p class="hint">Leave the last box empty when the file already has a price or a sales amount.</p>
+        <p class="hint">The suggested price still uses the percent you type, so you can check it with a calculator. Leave the last box empty when the file already has a price or a sales amount.</p>
       </section>
 
       <section class="step" data-step="sales" data-read="true" hidden>
@@ -269,28 +277,28 @@
       <section class="step" data-step="forecast" data-read="true" hidden>
         <p class="kicker">5 of 8 · Forecast</p>
         <h2>Next week</h2>
-        <p class="ask">Units expected from the last four weeks, and how far that average missed the latest week.</p>
+        <p class="ask">The mean of the last four weeks, written out, and how far that average missed the latest week.</p>
         <div id="forecast-body"></div>
       </section>
 
       <section class="step" data-step="price" data-read="true" hidden>
         <p class="kicker">6 of 8 · Price</p>
         <h2>What to charge</h2>
-        <p class="ask">The number is what to charge. Move the slider to see what another price would do. Nothing in the shop changes.</p>
+        <p class="ask">The number is what to charge. Under it is the arithmetic. Move the slider to see what another price would do. Nothing in the shop changes.</p>
         <div id="price-body"></div>
       </section>
 
       <section class="step" data-step="cover" data-read="true" hidden>
         <p class="kicker">7 of 8 · Stock</p>
         <h2>How long the stock lasts</h2>
-        <p class="ask">Cover is the stock you typed, divided by next week’s forecast.</p>
+        <p class="ask">Cover is the stock you typed, divided by next week’s forecast. The working is on this step.</p>
         <div id="cover-body"></div>
       </section>
 
       <section class="step" data-step="trust" data-read="true" hidden>
         <p class="kicker">8 of 8 · Trust</p>
         <h2>Can you trust the file?</h2>
-        <p class="ask">Rows that were dropped, weeks that look odd, and the miss on the latest week.</p>
+        <p class="ask">Rows that were dropped, the miss on the latest week, and a factor-desk score of this product’s weeks.</p>
         <div id="trust-body"></div>
       </section>
 
@@ -499,7 +507,14 @@
       draw();
     }
 
+    function workHtml(block) {
+      if (!block || !block.lines || !block.lines.length) return "";
+      const items = block.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
+      return `<div class="work"><p class="kicker">${escapeHtml(block.title || "How this was counted")}</p><ol>${items}</ol></div>`;
+    }
+
     function fillPrice() {
+      const book = board.workbook || {};
       const curve = board.price_curve || [];
       const suggested = nearest(curve, board.suggested_price);
       const current = nearest(curve, board.current_price);
@@ -539,7 +554,9 @@
           <thead><tr><th>Choice</th><th class="num">Price</th><th class="num">Demand</th><th class="num">Profit</th></tr></thead>
           <tbody>${options}</tbody>
         </table>
-        <p class="quiet">${escapeHtml(board.pricing_reason || "")}</p>`;
+        <p class="quiet">${escapeHtml(board.pricing_reason || "")}</p>
+        ${workHtml(book.demand)}
+        ${workHtml(book.profit)}`;
       if (curve.length && suggested) bindSlider(curve, suggested);
     }
 
@@ -606,6 +623,7 @@
       const last = history[history.length - 1];
       const weak = board.mape != null && Number(board.mape) >= 50;
       const story = historySentence(history);
+      const book = board.workbook || {};
       document.querySelector("#sales-body").innerHTML = `
         ${story ? `<p>${escapeHtml(story)}</p>` : ""}
         <p>${history.length} weeks${last ? `. The latest sold ${num(last.quantity)} at ${num(last.avg_price)}.` : ""}</p>
@@ -615,13 +633,15 @@
         <p class="figure">${num(board.forecast_units)}</p>
         <p>${escapeHtml(board.forecast_method || "")}.</p>
         <p>${board.mape == null ? `Price now is ${num(board.current_price)}. There are not enough weeks for a miss.` : `Last-week miss is ${num(board.mape)}%.`}</p>
-        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p class="quiet">${escapeHtml(board.evaluation || "")}</p>`}`;
+        ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p class="quiet">${escapeHtml(board.evaluation || "")}</p>`}
+        ${workHtml(book.forecast)}`;
       fillPrice();
       const alert = board.inventory_alert || "review";
       document.querySelector("#cover-body").innerHTML = `
         <p class="figure">${num(board.weeks_of_cover)}</p>
         <p>Weeks of cover. The stock call is ${escapeHtml(alert)}.</p>
-        <p>${escapeHtml(board.inventory_reason || "")}</p>`;
+        <p>${escapeHtml(board.inventory_reason || "")}</p>
+        ${workHtml(book.cover)}`;
       const problems = [...(board.warnings || []), ...(board.dropped || [])];
       const list = problems.length
         ? `<ul class="problems">${problems.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
@@ -630,7 +650,9 @@
       document.querySelector("#trust-body").innerHTML = `
         ${weak ? `<p class="caution">${escapeHtml(board.evaluation || "")}</p>` : `<p>${escapeHtml(board.evaluation || "No hold-out miss on this file.")}</p>`}
         ${list}
-        ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}`;
+        ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}
+        ${workHtml(book.holdout)}
+        ${workHtml(book.desk)}`;
     }
 
     async function run() {
