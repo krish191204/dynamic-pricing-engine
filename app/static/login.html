@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: light; --ground: #f2f4f7; --surface: #fff; --text: #0a0a0a; --muted: #6b6b6b; --control: #d4d4d4; --accent: #141414; --negative: #c4242a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.5 Geist, Inter, system-ui, sans-serif; color: var(--text); background: var(--ground); }
+    .topbar { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 24px; border-bottom: 1px solid #e6e6e6; }
+    .mark { width: 18px; height: 18px; }
+    h1 { margin: 0; font-size: 16px; font-weight: 500; }
+    .wrap { max-width: 400px; margin: 40px auto; padding: 0 24px; }
+    .sheet { background: var(--surface); border: 1px solid #e6e6e6; border-radius: 8px; padding: 28px 24px; }
+    h2 { margin: 0 0 8px; font-size: 28px; font-weight: 500; letter-spacing: -0.03em; }
+    .ask { margin: 0 0 20px; color: var(--muted); }
+    label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    input { padding: 8px 10px; border: 1px solid var(--control); border-radius: 6px; font: inherit; }
+    button { width: 100%; min-height: 36px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: 500 14px/1 inherit; cursor: pointer; }
+    .error { color: var(--negative); margin: 0 0 12px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h9.2L20 13.2 12.2 21 4 13.2V7z" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <circle cx="9" cy="11" r="1.1" fill="currentColor" />
+    </svg>
+    <h1>Price the next week</h1>
+  </header>
+  <main class="wrap">
+    <div class="sheet">
+      <h2>Sign in</h2>
+      <p class="ask">Use the course username and password. This is not an account store.</p>
+      <!--ERROR-->
+      <form method="post" action="/login">
+        <label>Username<input name="username" autocomplete="username" required /></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required /></label>
+        <button type="submit">Sign in</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

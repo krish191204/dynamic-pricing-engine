@@ -82,6 +82,7 @@ class DashboardAgent(Agent):
             "stock_on_hand": ctx.stock_on_hand,
             "unit_cost": ctx.unit_cost,
             "intake_note": ctx.intake_note,
+            # Plain-language sums plus the factor-desk report. Does not change the price.
             "workbook": explain_run(ctx),
         }
         self.note(ctx, f"view ready, approval {status}")

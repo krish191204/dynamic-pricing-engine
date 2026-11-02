@@ -24,6 +24,7 @@ class PricingAgent(Agent):
         drop = ctx.sales_drop_percent if ctx.sales_drop_percent is not None else 0
         horizon = ctx.weeks_until_value_loss or 0
         # Four fixed choices, not a fitted price. 15% down, 10% up, or the typed market price.
+        # score_price is shared with the slider so a table row and a curve point can match.
         candidates = [
             ("hold", current),
             ("mark_down", round(current * 0.85, 2)),

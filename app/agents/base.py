@@ -1,4 +1,8 @@
-"""Base type for a specialist agent."""
+"""Base type for a specialist agent.
+
+Every clerk is a subclass of Agent. `run` does the work. `note` appends
+one line to agent_log so a successful run always has ten lines.
+"""
 
 from __future__ import annotations
 

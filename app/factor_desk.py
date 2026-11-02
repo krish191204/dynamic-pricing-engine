@@ -20,6 +20,7 @@ import math
 from typing import Any
 
 
+# Five weeks, standing in for the factory's five-day Rank IC window.
 WINDOW = 5
 
 
@@ -53,6 +54,7 @@ def _pearson(xs: list[float], ys: list[float]) -> float | None:
 
 
 def spearman(xs: list[float], ys: list[float]) -> float | None:
+    """Pearson correlation of the ranks. 1 = same order, −1 = reversed."""
     if len(xs) != len(ys) or len(xs) < 3:
         return None
     return _pearson(_ranks(xs), _ranks(ys))
@@ -92,7 +94,10 @@ def _quintile_spread(factor: list[float], forward: list[float]) -> float | None:
 
 
 def score_sku_factors(weekly) -> dict[str, Any]:
-    """Coverage, Rank IC, ICIR, Q5-Q1 on this product. No other SKUs."""
+    """Coverage, Rank IC, ICIR, Q5-Q1 on this product. No other SKUs.
+
+    Does not change suggested_price. The page prints this on the Trust step.
+    """
     prices = [float(point.avg_price) for point in weekly]
     units = [float(point.quantity) for point in weekly]
     n = len(prices)
@@ -107,6 +112,8 @@ def score_sku_factors(weekly) -> dict[str, Any]:
                 "the way a factor desk would. This file is too short."
             ),
         }
+    # Target at week t is units in week t+1. Using units[t+1] in the factor
+    # itself would be lookahead; that is why factor series are prices[:-1].
     forward = units[1:]
     series = {
         "shelf_price": prices[:-1],

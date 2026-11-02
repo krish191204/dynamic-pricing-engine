@@ -23,7 +23,7 @@ class EvaluationAgent(Agent):
             ctx.evaluation_note = "Not enough weeks to score a hold-out forecast."
             self.note(ctx, ctx.evaluation_note)
             return ctx
-        history = [point.quantity for point in ctx.weekly[:-1]]
+        history = [point.quantity for point in ctx.weekly[:-1]]  # Latest week is hidden; it is the exam, not the lesson.
         actual = ctx.weekly[-1].quantity
         predicted = sum(history[-4:]) / 4
         if actual == 0:

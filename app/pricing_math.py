@@ -16,7 +16,10 @@ def score_price(price, current, forecast, drop, stock, cost, horizon):
     if current is None or current <= 0:
         return None
     price = round(float(price), 2)
+    # Relative price move from last week's average. 0.10 means 10% higher.
     move = (price - current) / current
+    # drop/10 scales the typed "fall if price rises 10%" onto this move.
+    # Example: drop 15, rise 10% → factor = 1 + 0.10 × (−1.5) = 0.85.
     factor = 1 + move * (-float(drop) / 10)
     demand = max(0.0, float(forecast) * factor)
     horizon = float(horizon or 0)
@@ -27,6 +30,7 @@ def score_price(price, current, forecast, drop, stock, cost, horizon):
     else:
         sellable = min(stock, demand * horizon)
     wasted = stock - sellable
+    # Unsold stock is a total loss at unit cost (newsvendor-style payoff).
     profit = (price - cost) * sellable - cost * wasted
     return {
         "price": price,

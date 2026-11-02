@@ -1,3 +1,8 @@
+<!--
+  The only page. No build step. The server re-reads this file on each GET /.
+  Steps 1–3 are the form. Continue on step 3 POSTs /runs. Steps 4–9 draw
+  dashboard JSON. Step 9 is statistics from those weeks. It does not change the price.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,6 +52,18 @@
       position: sticky;
       top: 0;
       z-index: 2;
+    }
+    .out { margin-left: auto; }
+    .out button {
+      width: auto;
+      min-height: 32px;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font: 500 13px/1 inherit;
+      cursor: pointer;
     }
     .mark { width: 18px; height: 18px; flex: none; }
     h1 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
@@ -181,6 +198,7 @@
     }
     .work ol { margin: 8px 0 0; padding-left: 18px; }
     .work li { margin: 8px 0; max-width: 62ch; }
+    svg.chart { width: 100%; height: auto; display: block; margin: 8px 0; }
     .week {
       display: grid;
       grid-template-columns: 148px 1fr 64px 56px;
@@ -224,12 +242,15 @@
       <circle cx="9" cy="11" r="1.1" fill="currentColor" />
     </svg>
     <h1>Price the next week</h1>
+    <form class="out" method="post" action="/logout">
+      <button type="submit">Sign out</button>
+    </form>
   </header>
   <main class="wrap">
     <ol class="steps" id="steps"></ol>
     <form id="run-form" class="sheet">
       <section class="step" data-step="product">
-        <p class="kicker">1 of 8 · The product</p>
+        <p class="kicker">1 of 9 · The product</p>
         <h2>Which product is this?</h2>
         <p class="ask">Name it, then give its sales. A file, a pasted table, or the real UCI sample.</p>
         <div class="fields">
@@ -245,7 +266,7 @@
       </section>
 
       <section class="step" data-step="stock" hidden>
-        <p class="kicker">2 of 8 · The stock</p>
+        <p class="kicker">2 of 9 · The stock</p>
         <h2>What do you hold?</h2>
         <p class="ask">Stock, what one unit costs you, and how soon unsold stock loses its value.</p>
         <div class="fields">
@@ -256,7 +277,7 @@
       </section>
 
       <section class="step" data-step="market" hidden>
-        <p class="kicker">3 of 8 · The market</p>
+        <p class="kicker">3 of 9 · The market</p>
         <h2>What is the market doing?</h2>
         <p class="ask">A price you can see now, and your guess of how far sales fall if your price rises 10%. After the run we also read that same idea off your weeks, and show both.</p>
         <div class="fields">
@@ -268,38 +289,45 @@
       </section>
 
       <section class="step" data-step="sales" data-read="true" hidden>
-        <p class="kicker">4 of 8 · Sales</p>
+        <p class="kicker">4 of 9 · Sales</p>
         <h2>What sold</h2>
         <p class="ask">Each bar is one week. The latest week is marked Latest.</p>
         <div id="sales-body"></div>
       </section>
 
       <section class="step" data-step="forecast" data-read="true" hidden>
-        <p class="kicker">5 of 8 · Forecast</p>
+        <p class="kicker">5 of 9 · Forecast</p>
         <h2>Next week</h2>
         <p class="ask">The mean of the last four weeks, written out, and how far that average missed the latest week.</p>
         <div id="forecast-body"></div>
       </section>
 
       <section class="step" data-step="price" data-read="true" hidden>
-        <p class="kicker">6 of 8 · Price</p>
+        <p class="kicker">6 of 9 · Price</p>
         <h2>What to charge</h2>
         <p class="ask">The number is what to charge. Under it is the arithmetic. Move the slider to see what another price would do. Nothing in the shop changes.</p>
         <div id="price-body"></div>
       </section>
 
       <section class="step" data-step="cover" data-read="true" hidden>
-        <p class="kicker">7 of 8 · Stock</p>
+        <p class="kicker">7 of 9 · Stock</p>
         <h2>How long the stock lasts</h2>
         <p class="ask">Cover is the stock you typed, divided by next week’s forecast. The working is on this step.</p>
         <div id="cover-body"></div>
       </section>
 
       <section class="step" data-step="trust" data-read="true" hidden>
-        <p class="kicker">8 of 8 · Trust</p>
+        <p class="kicker">8 of 9 · Trust</p>
         <h2>Can you trust the file?</h2>
         <p class="ask">Rows that were dropped, the miss on the latest week, and a factor-desk score of this product’s weeks.</p>
         <div id="trust-body"></div>
+      </section>
+
+      <section class="step" data-step="stats" data-read="true" hidden>
+        <p class="kicker">9 of 9 · Statistics</p>
+        <h2>What the weeks say</h2>
+        <p class="ask">Means, a slope with a standard error, and a sketch interval. None of this changes the suggested price.</p>
+        <div id="stats-body"></div>
       </section>
 
       <p class="error" id="run-error" hidden></p>
@@ -318,7 +346,7 @@
     const fileName = document.querySelector("#file-name");
     const runError = document.querySelector("#run-error");
     const names = { hold: "Hold", mark_down: "Mark down", raise: "Raise", match_market: "Match market" };
-    const labels = ["Product", "Stock", "Market", "Sales", "Forecast", "Price", "Cover", "Trust"];
+    const labels = ["Product", "Stock", "Market", "Sales", "Forecast", "Price", "Cover", "Trust", "Stats"];
     let index = 0;
     let board = null;
 
@@ -618,6 +646,149 @@
       return `<div class="week head"><span>Week</span><span></span><span class="num">Units</span><span class="num">Price</span></div>${rows}`;
     }
 
+    const T095 = {1:12.706,2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,9:2.262,10:2.228,11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,17:2.110,18:2.101,19:2.093,20:2.086,21:2.080,22:2.074,23:2.069,24:2.064,25:2.060,26:2.056,27:2.052,28:2.048,29:2.045,30:2.042};
+
+    function mean(xs) { return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; }
+    function median(xs) {
+      if (!xs.length) return null;
+      const o = [...xs].sort((a, b) => a - b);
+      const m = Math.floor(o.length / 2);
+      return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2;
+    }
+    function sd(xs) {
+      if (xs.length < 2) return null;
+      const m = mean(xs);
+      const v = xs.reduce((a, x) => a + (x - m) ** 2, 0) / (xs.length - 1);
+      return Math.sqrt(v);
+    }
+    function pearson(xs, ys) {
+      if (xs.length < 3) return null;
+      const mx = mean(xs), my = mean(ys);
+      let num = 0, dx = 0, dy = 0;
+      xs.forEach((x, i) => {
+        num += (x - mx) * (ys[i] - my);
+        dx += (x - mx) ** 2;
+        dy += (ys[i] - my) ** 2;
+      });
+      if (dx < 1e-12 || dy < 1e-12) return null;
+      return num / Math.sqrt(dx * dy);
+    }
+    function ranks(xs) {
+      const ordered = xs.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
+      const out = Array(xs.length).fill(0);
+      for (let i = 0; i < ordered.length; ) {
+        let j = i;
+        while (j + 1 < ordered.length && ordered[j + 1][0] === ordered[i][0]) j += 1;
+        const avg = (i + j) / 2 + 1;
+        for (let k = i; k <= j; k += 1) out[ordered[k][1]] = avg;
+        i = j + 1;
+      }
+      return out;
+    }
+    function logLog(prices, qty) {
+      const pairs = prices.map((p, i) => [p, qty[i]]).filter(([p, q]) => p > 0 && q > 0);
+      const distinct = new Set(pairs.map(([p]) => p.toFixed(2)));
+      if (pairs.length < 4 || distinct.size < 3) {
+        return { note: "Need several weeks with different prices to fit log units on log price." };
+      }
+      const xs = pairs.map(([p]) => Math.log(p));
+      const ys = pairs.map(([, q]) => Math.log(q));
+      const n = xs.length;
+      const mx = mean(xs), my = mean(ys);
+      const sxx = xs.reduce((a, x) => a + (x - mx) ** 2, 0);
+      if (sxx < 1e-12) return { note: "Price does not move, so a slope has no standard error." };
+      const slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / sxx;
+      const intercept = my - slope * mx;
+      const sse = ys.reduce((a, y, i) => a + (y - (intercept + slope * xs[i])) ** 2, 0);
+      const sst = ys.reduce((a, y) => a + (y - my) ** 2, 0);
+      const se = n > 2 ? Math.sqrt(sse / (n - 2) / sxx) : null;
+      const r2 = sst < 1e-12 ? null : 1 - sse / sst;
+      const implied = (1 - (1.1 ** slope)) * 100;
+      return {
+        slope, se, r2, implied,
+        note: `log(units) = a + b log(price). b = ${slope.toFixed(3)}${se != null ? ` (SE ${se.toFixed(3)})` : ""}. A 10% higher price would change units by about ${implied.toFixed(1)}% if that slope held. This does not change the suggested price.`
+      };
+    }
+    function describeRow(xs) {
+      const m = mean(xs), s = sd(xs);
+      const cv = m && s != null ? s / Math.abs(m) : null;
+      return `<tr>
+        <td class="num">${xs.length}</td>
+        <td class="num">${num(m)}</td>
+        <td class="num">${num(median(xs))}</td>
+        <td class="num">${num(s)}</td>
+        <td class="num">${xs.length ? num(Math.min(...xs)) : "—"}</td>
+        <td class="num">${xs.length ? num(Math.max(...xs)) : "—"}</td>
+        <td class="num">${num(cv)}</td>
+      </tr>`;
+    }
+    function weekBars(history) {
+      const width = 640, height = 140, pad = 28;
+      const ys = history.map((w) => Number(w.quantity) || 0);
+      const maxY = Math.max(...ys, 1);
+      const barW = Math.max(2, (width - pad * 2) / history.length * 0.7);
+      const rects = history.map((w, i) => {
+        const h = (Number(w.quantity) / maxY) * (height - pad * 2);
+        const x = pad + i * ((width - pad * 2) / history.length);
+        return `<rect x="${x.toFixed(1)}" y="${(height - pad - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h, 0).toFixed(1)}" fill="#141414"></rect>`;
+      }).join("");
+      return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Weekly units">${rects}</svg>`;
+    }
+    function scatter(history) {
+      const width = 640, height = 220, pad = 36;
+      const xs = history.map((w) => Number(w.avg_price));
+      const ys = history.map((w) => Number(w.quantity));
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(0, ...ys), maxY = Math.max(...ys, 1);
+      const xOf = (x) => pad + ((x - minX) / (maxX - minX || 1)) * (width - pad * 2);
+      const yOf = (y) => height - pad - ((y - minY) / (maxY - minY || 1)) * (height - pad * 2);
+      const dots = history.map((w) => `<circle cx="${xOf(w.avg_price).toFixed(1)}" cy="${yOf(w.quantity).toFixed(1)}" r="3.5" fill="#0a0a0a"></circle>`).join("");
+      return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Price versus units">
+        <text x="${pad}" y="14" fill="#6b6b6b" font-size="12">Units</text>
+        <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="#e6e6e6"></line>
+        <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${height - pad}" stroke="#e6e6e6"></line>
+        ${dots}
+        <text x="${pad}" y="${height - 8}" fill="#6b6b6b" font-size="12">${num(minX)}</text>
+        <text x="${width - pad}" y="${height - 8}" fill="#6b6b6b" font-size="12" text-anchor="end">${num(maxX)} price</text>
+      </svg>`;
+    }
+    function fillStats() {
+      const history = board.history || [];
+      const host = document.querySelector("#stats-body");
+      if (!host) return;
+      if (history.length < 2) {
+        host.innerHTML = "<p>Need at least two weeks for these sums.</p>";
+        return;
+      }
+      const qty = history.map((w) => Number(w.quantity) || 0);
+      const prices = history.map((w) => Number(w.avg_price) || 0);
+      const fit = logLog(prices, qty);
+      const n = qty.length;
+      const m = mean(qty);
+      const s = sd(qty);
+      const df = n - 1;
+      const tcrit = df > 30 ? 1.96 : T095[df];
+      const half = s != null && tcrit ? tcrit * s / Math.sqrt(n) : null;
+      const desk = (board.workbook || {}).desk;
+      host.innerHTML = `
+        <p class="quiet">These figures use the same Monday weeks as the price. They do not pick the charge.</p>
+        ${weekBars(history)}
+        <p class="kicker">Weekly units and price</p>
+        <table>
+          <thead><tr><th></th><th class="num">n</th><th class="num">Mean</th><th class="num">Median</th><th class="num">SD</th><th class="num">Min</th><th class="num">Max</th><th class="num">CV</th></tr></thead>
+          <tbody>
+            <tr><td>Units</td>${describeRow(qty).replace("<tr>", "").replace("</tr>", "")}</tr>
+            <tr><td>Price</td>${describeRow(prices).replace("<tr>", "").replace("</tr>", "")}</tr>
+          </tbody>
+        </table>
+        <p>Pearson ${num(pearson(prices, qty))}. Spearman ${num(pearson(ranks(prices), ranks(qty)))}.</p>
+        ${scatter(history)}
+        <p>${escapeHtml(fit.note || "")}</p>
+        <p>Mean of the four weeks before last ${n >= 5 ? num(mean(qty.slice(-5, -1))) : "needs five weeks"}; last week ${num(qty[qty.length - 1])}; miss ${board.mape == null ? "—" : num(board.mape) + "%"}.</p>
+        <p>${half != null ? `Sketch 95% interval on mean weekly units: ${num(m - half)} to ${num(m + half)} around ${num(m)} (t = ${num(tcrit)}, df = ${df}). Weeks in a row are not independent draws.` : ""}</p>
+        ${workHtml(desk)}`;
+    }
+
     function fillResults() {
       const history = board.history || [];
       const last = history[history.length - 1];
@@ -653,6 +824,7 @@
         ${guards.length ? `<p class="quiet">${escapeHtml(guards.join(" "))}</p>` : ""}
         ${workHtml(book.holdout)}
         ${workHtml(book.desk)}`;
+      fillStats();
     }
 
     async function run() {

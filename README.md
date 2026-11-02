@@ -4,7 +4,7 @@ This program stands in for a pricing person a small or mid-size shop cannot hire
 
 Phase 1 is the part that runs today: a sales history you already have, numbers you type for stock and the market, and a recommendation on one page. The suggested price still uses the four-week mean and the sales-fall percent you typed, so you can check it with a calculator. Competitor feeds, automatic price changes, a forecast other than that mean, and several products in one run are later work. They are listed in [docs/PLAN.md](docs/PLAN.md).
 
-There is no sign-in. Opening the site is the wizard. A run is still not saved after you refresh.
+Opening the site asks you to sign in with the course credentials **username `SE123`** and **password `SE123`**. There is no account table. A run is still not saved after you refresh.
 
 ## What you need
 
@@ -42,7 +42,7 @@ curl http://127.0.0.1:8000/health
 
 A healthy process returns `{"status":"ok","agents":10}`.
 
-There is no sign-up or sign-in page. An old `/login` address still opens the wizard.
+Sign in at `/login` with username `SE123` and password `SE123`. Sign out returns you to that page. `/health` does not need a cookie.
 
 ## Run the sample in the terminal
 
@@ -101,6 +101,7 @@ A finished run shows:
 - One bar per week, and one sentence about whether sales and the shelf price moved together. The latest week is marked Latest.
 - Problems found while reading the file: warnings, then dropped rows.
 - A note of which columns were used, and how many rows were skipped.
+- A last Statistics step: mean, median, SD, Pearson/Spearman, a log-log slope with a standard error, the same last-week miss, and a t-interval on mean weekly units. That step does not change the suggested price.
 
 A failed run replaces that sheet with the error sentences. Fix the named input and run again. The page does not keep earlier runs.
 

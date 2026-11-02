@@ -92,6 +92,11 @@ def _header_map(fieldnames: list[str]) -> dict[str, str]:
 
 
 def read_sales_report(text: str, product_code: str, stated_price: float | None) -> tuple[list[SalesRow], str, list[str]]:
+    """Turn pasted or uploaded text into SalesRow objects.
+
+    Returns (rows, intake_note, warnings). Raises ValueError when no date
+    and quantity columns can be found in the first 40 lines.
+    """
     rows_in = []
     header_index = None
     mapping = {}

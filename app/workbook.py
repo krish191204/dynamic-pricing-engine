@@ -77,7 +77,10 @@ def elasticity_from_weeks(weekly) -> dict[str, Any]:
 
 
 def explain_run(ctx) -> dict[str, Any]:
-    """Step list the page can print. Numbers match score_price and the agents."""
+    """Step list the page can print. Numbers match score_price and the agents.
+
+    This is the 'show the working' layer. It must not pick a different price.
+    """
     weekly = ctx.weekly or []
     last_four = [point.quantity for point in weekly[-4:]]
     forecast = ctx.forecast_units

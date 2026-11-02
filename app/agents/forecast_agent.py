@@ -20,7 +20,7 @@ class ForecastAgent(Agent):
             return ctx
         # Hand-checkable on purpose: add the last four weekly totals and divide by 4.
         # One odd week moves the result. The latest week is not a second forecast yet.
-        last_four = [point.quantity for point in ctx.weekly[-4:]]
+        last_four = [point.quantity for point in ctx.weekly[-4:]]  # Constraint C3: this mean is the forecast.
         ctx.forecast_units = round(sum(last_four) / len(last_four), 2)
         earlier = [point.quantity for point in ctx.weekly[:-4]] or last_four
         ctx.recent_average = round(sum(earlier) / len(earlier), 2)

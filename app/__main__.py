@@ -1,4 +1,8 @@
-"""Run the sample jacket case from the project overview."""
+"""Print the jacket sample in the terminal. This is not the website.
+
+    python3 -m app
+uses data/sample_sales.csv (JACKET-01). The web sample is the UCI file.
+"""
 
 import json
 

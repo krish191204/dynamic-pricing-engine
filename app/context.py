@@ -1,4 +1,9 @@
-"""Shared state passed through the ten specialist agents."""
+"""Shared state passed through the ten specialist agents.
+
+Think of RunContext as one clipboard for one Sunday-night decision.
+SalesRow is one invoice line. WeekPoint is one Monday bucket. Agents
+must not make a second clipboard; they write on this one.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +14,8 @@ from typing import Any
 
 @dataclass
 class SalesRow:
+    """One usable line from the sales table, after intake has named the columns."""
+
     sold_on: date
     product_code: str
     unit_price: float
@@ -18,6 +25,8 @@ class SalesRow:
 
 @dataclass
 class WeekPoint:
+    """Units and average price for the week that starts on this Monday."""
+
     week_start: date
     quantity: float
     avg_price: float

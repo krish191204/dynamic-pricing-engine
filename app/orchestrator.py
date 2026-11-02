@@ -1,6 +1,9 @@
 """Arena: scope. Owner: Krish.
 
-Runs the ten specialists in order and returns one dashboard payload.
+The manager of the ten clerks. Builds one clipboard (RunContext), walks
+AGENTS in order, and packs what the page needs. This function is also
+what `python3 -m app` calls, so the terminal sample and the website share
+the same pipeline.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ def run_analysis(
     sales_drop_percent: float | None = None,
     stated_price: float | None = None,
 ) -> dict:
+    """Return {dashboard, agent_log, errors} for one product and one file."""
     # One context object is passed down the line. Each agent fills its own fields.
     ctx = RunContext(
         product_code=product_code,
