@@ -12,6 +12,19 @@ One product in, three answers out: units next week, a price action (hold, mark d
 
 Phase 2 (many products, competitor prices, fancier forecasts, live price changes) is described in the report only.
 
+## Constraints (Release 1)
+
+These are limits on the system, not missing features. They can be checked.
+
+| ID | Class | Constraint |
+|---|---|---|
+| C1 | External / domain | The system shall not fetch a competitor, wholesale, or till price from a live network API during a run. The operator types **Market price now**. A shop of this size has no reliable public feed, and a stale API would look more certain than a number the owner just saw on a shelf. |
+| C2 | External | A suggested price shall not be written to a till, a shop website, or any other live selling system. Status stays a recommendation. |
+| C3 | Product | Next-week demand shall be the mean of the last four weekly quantities, not a fitted live model. The sales-fall percent the operator typed is the only demand slope. |
+| C4 | Organisational | Database passwords and session secrets shall not be stored in git. A host without those variables still opens the pricing page. |
+
+C1 is why a real-time market API is out of this release. It can be discussed in the report as Phase 2. It is not an open bug.
+
 ## Who depends on whom
 
 ```mermaid

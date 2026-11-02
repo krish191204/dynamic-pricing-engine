@@ -46,7 +46,7 @@ A healthy process returns `{"status":"ok","agents":10}`.
 
 Opening the page sends you to `/login` when `DATABASE_HOST`, `DATABASE_PASSWORD`, and `SESSION_SECRET` are set. Sign in, or create an account with the second button. The password is hashed before it is stored. Row level security is on for `app_users`, and the Supabase API roles cannot read that table.
 
-Copy `.env.example` to `.env` for a local machine. Do not commit `.env`. On Vercel, set the same names in the project environment if you want the login wall on the live site. Without them, the oat milk page still runs.
+Copy `.env.example` to `.env` for a local machine. Do not commit `.env`. On Vercel, set the same names in the project environment if you want the login wall on the live site. Without them, the UCI sample page still runs.
 
 | Variable | What it is |
 |---|---|
@@ -71,7 +71,7 @@ That prints the dashboard for `data/sample_sales.csv`, product `JACKET-01`, stoc
 python3 -m pytest tests -q
 ```
 
-Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, the oat milk example, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_pricing_math.py` checks that a slider point uses the same profit as the four choices. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the jacket file.
+Run this from the repository folder so Python can import `app`. `tests/test_pipeline.py` covers the agent chain, the jacket sample, the real UCI hanging-heart extract, a product that is not in the file, the flawed bread file, a raise on thin stock, and the cost floor. `tests/test_pricing_math.py` checks that a slider point uses the same profit as the four choices. `tests/test_intake.py` covers titled reports, a missing price, a UCI-style header, and the jacket file.
 
 ## Fill in the form
 
@@ -83,12 +83,12 @@ Every number may be a decimal. Empty required fields are named before anything i
 | Stock on hand | Units you hold now, zero or more. The file is not asked for this. |
 | Unit cost | What one unit costs you. A suggested price is not meant to sit below this. |
 | Weeks until stock loses value | How long unsold units still have a sale. After that, leftover stock is treated as a total loss at unit cost. |
-| Market price now | A price you have seen. There is no live feed. You type it. |
+| Market price now | A price you have seen. There is no live feed (constraint C1 in `docs/PLAN.md`). You type it. |
 | Sales fall if price rises 10% | Your estimate. `15` means a 10% price rise cuts unit sales by 15%. `0` means demand does not move when the price moves. |
 | Price now, if the report has no price | Used only when the table has dates and quantities, and neither a unit price nor a sales amount. |
 | Sales report | A `.csv`, `.tsv`, or `.txt` file. |
 | Or paste the table | The same kind of table, including the header row. |
-| Use the oat milk example | Uses `data/sample_oat.csv`. Ticking it on the page fills stock 200, cost 1.20, 3 weeks, market price 2.10, and a 20% sales fall. |
+| Use the UCI hanging-heart sample | Uses `data/uci_85123A.csv`. Ticking it on the page fills stock 400, cost 1.20, 8 weeks, market price 2.55, and a 15% sales fall. |
 
 History is chosen in this order:
 
@@ -96,7 +96,7 @@ History is chosen in this order:
 2. Otherwise the chosen file, if there is one.
 3. Otherwise the sample, and only when the box is ticked.
 
-The sample on the page is oat milk (`OAT-1L`, shelf prices from 1.90 to 2.60). After the run, the page shows the product name you typed, but the history is still that file. If the file price and your unit cost cannot be the same product, the run stops. Untick the example when you paste or upload your own table. `python3 -m app` still prints the jacket file, `data/sample_sales.csv`.
+The sample on the page is a real UCI extract (`85123A`, WHITE HANGING HEART T-LIGHT HOLDER). After the run, the page shows the product name you typed, but the history is still that file. If the file price and your unit cost cannot be the same product, the run stops. Untick the example when you paste or upload your own table. `python3 -m app` still prints the made-up jacket file, `data/sample_sales.csv`. Citation: [docs/DATA.md](docs/DATA.md).
 
 ## Read the result
 
@@ -164,7 +164,7 @@ Week ending	Units sold	Sales
 
 ## Files in `data/`
 
-`data/sample_oat.csv` is a made-up oat milk history, one row per Monday from 2025-06-02 to 2025-09-15. Columns are `date,product,price,quantity,invoice`. Quantities fall from 95 to 40 while the price rises from 1.90 to 2.60. It includes one cancelled oat invoice (`C900`, quantity −3) and one almond row (`ALMOND-1L`). Both are dropped when the product is `OAT-1L`. The forecast uses the last four quantities: (50 + 48 + 44 + 40) / 4 = 45.5. The latest week is priced at 2.60. With stock 200, unit cost 1.20, 3 weeks until the milk goes off, market price 2.10, and a 20% sales fall, the run matches the market at 2.10. That sells about 189 units, leaves 11, and makes 156.90. Holding 2.60 leaves 63.5 and makes 114.90. The same average, checked on the latest week, is off by 23.1%.
+`data/uci_85123A.csv` is a real extract from the UCI Online Retail data set (Chen et al., CC BY 4.0). Columns are the original `InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice`. It holds every `85123A` line from 1 December 2010 to 9 December 2011, plus 20 real `71053` lantern lines. Cleaning drops 42 cancelled invoices, 6 non-positive quantity or price rows, and the 20 lantern rows (68 in total). The remaining sales fill 53 Monday weeks. The forecast uses the last four quantities: (1326 + 904 + 731 + 673) / 4 = 908.5. The latest week averages 2.87 and mixes prices from 2.55 to 6.63. With stock 400, unit cost 1.20, 8 weeks until leftover stock is treated as a loss, market price 2.55, and a 15% sales fall, the run raises to 3.16, makes 784, sells the whole 400, and says reorder (0.44 weeks of cover). The same average, checked on the latest week, is off by 32.1%. Unit cost is not in the UCI file. You type it.
 
 `data/sample_sales.csv` is a made-up jacket history. Columns are `date,product,price,quantity,invoice`. It includes one cancelled jacket invoice (`C1015`, quantity −5) and one hat row (`HAT-02`). Both are dropped when the product is `JACKET-01`. Weekly totals, Monday to Sunday, for the jacket are 160, 140, 140, 120, 70, 45, 25. The forecast uses the last four: (120 + 70 + 45 + 25) / 4 = 65. The latest week is priced at 85.
 
@@ -301,12 +301,12 @@ The server binds to your machine only when you use `--host 127.0.0.1`. Do not pu
 
 ```json
 {
-  "product_code": "OAT-1L",
-  "stock_on_hand": 200,
+  "product_code": "85123A",
+  "stock_on_hand": 400,
   "unit_cost": 1.2,
-  "weeks_until_value_loss": 3,
-  "competitor_price": 2.1,
-  "sales_drop_percent": 20,
+  "weeks_until_value_loss": 8,
+  "competitor_price": 2.55,
+  "sales_drop_percent": 15,
   "stated_price": null,
   "csv_path": null,
   "report_text": null,
@@ -315,7 +315,7 @@ The server binds to your machine only when you use `--host 127.0.0.1`. Do not pu
 }
 ```
 
-`use_sample: true` reads `data/sample_oat.csv` and runs it as `OAT-1L`, then writes your `product_code` onto the dashboard. A non-empty `report_text` or a `csv_path` turns the sample off. Pasted text is saved to `data/uploads/pasted-report.txt` and that path is analysed. To run the jacket file over HTTP, pass `data/sample_sales.csv` as `csv_path` and leave `use_sample` false. Sending the old jacket cost with `use_sample: true` stops the run, because 40 is not the cost of milk priced around 2.60.
+`use_sample: true` reads `data/uci_85123A.csv` and runs it as `85123A`, then writes your `product_code` onto the dashboard. A non-empty `report_text` or a `csv_path` turns the sample off. Pasted text is saved to `data/uploads/pasted-report.txt` and that path is analysed. To run the jacket file over HTTP, pass `data/sample_sales.csv` as `csv_path` and leave `use_sample` false. Sending a jacket cost of 40 with `use_sample: true` stops the run, because 40 is far above the hanging-heart prices around 2.87.
 
 A success body has three keys:
 
@@ -406,10 +406,11 @@ app/intake.py               Header detection, dates, numbers
 app/agents/                 One file per agent
 app/pricing_math.py         The profit score shared by the four choices and the slider
 app/static/index.html       The whole page, with no build step
-data/sample_oat.csv         Oat milk example used by the page
+data/uci_85123A.csv         Real UCI extract used by the page
 data/sample_sales.csv       Jacket sample used by `python3 -m app`
 data/flawed_sales.csv       Bread file with known data problems
 tests/                      Pipeline and intake tests
+docs/DATA.md                Citation for the UCI extract
 docs/PLAN.md                Dates and what is still to build
 docs/TEAM.md                Who owns which agent
 docs/PROFILES.md            Per-person deliverables

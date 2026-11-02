@@ -240,17 +240,17 @@
       <section class="step" data-step="product">
         <p class="kicker">1 of 8 · The product</p>
         <h2>Which product is this?</h2>
-        <p class="ask">Name it, then give its sales. A file, a pasted table, or the oat milk example.</p>
+        <p class="ask">Name it, then give its sales. A file, a pasted table, or the real UCI sample.</p>
         <div class="fields">
-          <label>Product code<input name="product_code" placeholder="OAT-1L" required autocomplete="off" /></label>
+          <label>Product code<input name="product_code" placeholder="85123A" required autocomplete="off" /></label>
           <label class="file">Sales report
             <input name="sales_file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" />
             <span class="file-name" id="file-name">Choose a CSV, TSV, or text file</span>
           </label>
           <label>Or paste the table<textarea name="report_text" placeholder="date, product, price, quantity"></textarea></label>
-          <label class="check"><input name="use_sample" type="checkbox" /> Use the oat milk example</label>
+          <label class="check"><input name="use_sample" type="checkbox" /> Use the UCI hanging-heart sample</label>
         </div>
-        <p class="hint">Ticking the example fills stock 200, cost 1.20, 3 weeks, a market price of 2.10, and a 20% sales fall. Title rows are skipped. The code has to match a code in the file.</p>
+        <p class="hint">Ticking the example fills stock 400, cost 1.20, 8 weeks, a market price of 2.55, and a 15% sales fall. The file is a real extract of StockCode 85123A from the UCI Online Retail set. Title rows are skipped. The code has to match a code in the file.</p>
       </section>
 
       <section class="step" data-step="stock" hidden>
@@ -364,12 +364,12 @@
 
     form.use_sample.addEventListener("change", () => {
       if (!form.use_sample.checked) return;
-      form.product_code.value = "OAT-1L";
-      form.stock_on_hand.value = "200";
+      form.product_code.value = "85123A";
+      form.stock_on_hand.value = "400";
       form.unit_cost.value = "1.2";
-      form.weeks_until_value_loss.value = "3";
-      form.competitor_price.value = "2.1";
-      form.sales_drop_percent.value = "20";
+      form.weeks_until_value_loss.value = "8";
+      form.competitor_price.value = "2.55";
+      form.sales_drop_percent.value = "15";
       form.stated_price.value = "";
     });
 
