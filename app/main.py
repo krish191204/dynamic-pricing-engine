@@ -2,45 +2,20 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from html import escape
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from app.auth import (
-    COOKIE,
-    AuthError,
-    authenticate,
-    create_account,
-    email_for,
-    ensure_schema,
-    read_session,
-    sign_session,
-    storage_configured,
-)
 from app.orchestrator import run_analysis
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    try:
-        ensure_schema()
-    except AuthError:
-        # The page still opens. Sign-in reports that storage is unavailable.
-        pass
-    yield
-
-
-app = FastAPI(title="Dynamic pricing and inventory engine", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Dynamic pricing and inventory engine", version="0.1.0")
 
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLE = ROOT / "data" / "uci_85123A.csv"
 UPLOADS = ROOT / "data" / "uploads"
 PAGE = Path(__file__).resolve().parent / "static" / "index.html"
-LOGIN_PAGE = Path(__file__).resolve().parent / "static" / "login.html"
-SESSION_MAX_AGE = 14 * 24 * 3600
 
 
 class RunRequest(BaseModel):
@@ -57,96 +32,37 @@ class RunRequest(BaseModel):
     manager_override: str | None = None
 
 
-def _user_id(request: Request) -> int | None:
-    return read_session(request.cookies.get(COOKIE))
-
-
-def _signed_in(request: Request) -> bool:
-    if not storage_configured():
-        return True
-    return _user_id(request) is not None
-
-
-def _sign_in_required() -> JSONResponse:
-    return JSONResponse({"errors": ["Sign in again."]}, status_code=401)
-
-
-def _login_html(error: str = "") -> HTMLResponse:
-    html = LOGIN_PAGE.read_text(encoding="utf-8")
-    block = f'<p class="error" role="alert">{escape(error)}</p>' if error else ""
-    return HTMLResponse(html.replace("<!--ERROR-->", block))
-
-
-def _remember(response: RedirectResponse, request: Request, user_id: int) -> RedirectResponse:
-    response.set_cookie(
-        COOKIE,
-        sign_session(user_id),
-        max_age=SESSION_MAX_AGE,
-        httponly=True,
-        samesite="lax",
-        secure=request.url.scheme == "https",
-        path="/",
-    )
-    return response
-
-
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "agents": 10}
 
 
+def _home() -> RedirectResponse:
+    return RedirectResponse("/", status_code=303)
+
+
 @app.get("/login")
-def login_form(request: Request):
-    if not storage_configured() or _user_id(request) is not None:
-        return RedirectResponse("/", status_code=303)
-    return _login_html()
+def login_get() -> RedirectResponse:
+    return _home()
 
 
 @app.post("/login")
-def login_submit(
-    request: Request,
-    email: str = Form(""),
-    password: str = Form(""),
-    mode: str = Form("login"),
-):
-    if not storage_configured():
-        return RedirectResponse("/", status_code=303)
-    try:
-        user_id = create_account(email, password) if mode == "signup" else authenticate(email, password)
-    except AuthError as exc:
-        return _login_html(str(exc))
-    return _remember(RedirectResponse("/", status_code=303), request, user_id)
+def login_post() -> RedirectResponse:
+    return _home()
 
 
 @app.post("/logout")
 def logout() -> RedirectResponse:
-    response = RedirectResponse("/" if not storage_configured() else "/login", status_code=303)
-    response.delete_cookie(COOKIE, path="/")
-    return response
-
-
-@app.get("/me")
-def me(request: Request):
-    if not storage_configured():
-        return {"email": None, "sign_in": False}
-    user_id = _user_id(request)
-    email = email_for(user_id) if user_id is not None else None
-    if not email:
-        return _sign_in_required()
-    return {"email": email, "sign_in": True}
+    return _home()
 
 
 @app.get("/")
-def home(request: Request):
-    if not _signed_in(request):
-        return RedirectResponse("/login", status_code=303)
+def home():
     return FileResponse(PAGE)
 
 
 @app.post("/uploads")
-async def upload(request: Request, file: UploadFile = File(...)) -> dict:
-    if not _signed_in(request):
-        return _sign_in_required()
+async def upload(file: UploadFile = File(...)) -> dict:
     UPLOADS.mkdir(parents=True, exist_ok=True)
     dest = UPLOADS / Path(file.filename or "upload.csv").name
     dest.write_bytes(await file.read())
@@ -154,9 +70,7 @@ async def upload(request: Request, file: UploadFile = File(...)) -> dict:
 
 
 @app.post("/runs")
-def create_run(body: RunRequest, request: Request) -> dict:
-    if not _signed_in(request):
-        return _sign_in_required()
+def create_run(body: RunRequest) -> dict:
     pasted = (body.report_text or "").strip()
     # A paste or an upload wins over the sample checkbox. The sample file is
     # the UCI hanging-heart holder, and its prices must not be used for another product's cost.
@@ -169,9 +83,9 @@ def create_run(body: RunRequest, request: Request) -> dict:
     elif body.report_text and body.report_text.strip():
         UPLOADS.mkdir(parents=True, exist_ok=True)
         # One shared file. Two people pasting at once overwrite each other.
-        pasted = UPLOADS / "pasted-report.txt"
-        pasted.write_text(body.report_text, encoding="utf-8")
-        csv_path = str(pasted)
+        pasted_file = UPLOADS / "pasted-report.txt"
+        pasted_file.write_text(body.report_text, encoding="utf-8")
+        csv_path = str(pasted_file)
         product_code = body.product_code
     else:
         csv_path = body.csv_path or ""

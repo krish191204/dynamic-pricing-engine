@@ -48,19 +48,6 @@
       top: 0;
       z-index: 2;
     }
-    .out { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .out span { color: var(--muted); font-size: 13px; }
-    .out button {
-      width: auto;
-      min-height: 32px;
-      padding: 6px 12px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: inherit;
-      font: 500 13px/1 inherit;
-      cursor: pointer;
-    }
     .mark { width: 18px; height: 18px; flex: none; }
     h1 { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
     .wrap { max-width: 760px; margin: 0 auto; padding: 20px var(--pad) 40px; }
@@ -229,10 +216,6 @@
       <circle cx="9" cy="11" r="1.1" fill="currentColor" />
     </svg>
     <h1>Price the next week</h1>
-    <form class="out" method="post" action="/logout">
-      <span id="who"></span>
-      <button type="submit">Sign out</button>
-    </form>
   </header>
   <main class="wrap">
     <ol class="steps" id="steps"></ol>
@@ -330,19 +313,6 @@
     const labels = ["Product", "Stock", "Market", "Sales", "Forecast", "Price", "Cover", "Trust"];
     let index = 0;
     let board = null;
-
-    fetch("/me").then(async (response) => {
-      if (response.status === 401) {
-        window.location.href = "/login";
-        return;
-      }
-      if (!response.ok) return;
-      const me = await response.json();
-      const who = document.querySelector("#who");
-      if (who) who.textContent = me.email || "";
-      const out = document.querySelector(".out");
-      if (out && !me.email) out.hidden = true;
-    });
 
     labels.forEach((label, i) => {
       const item = document.createElement("li");
