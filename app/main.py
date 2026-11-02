@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.orchestrator import run_analysis
@@ -37,26 +37,10 @@ def health() -> dict:
     return {"status": "ok", "agents": 10}
 
 
-def _home() -> RedirectResponse:
-    return RedirectResponse("/", status_code=303)
-
-
-@app.get("/login")
-def login_get() -> RedirectResponse:
-    return _home()
-
-
-@app.post("/login")
-def login_post() -> RedirectResponse:
-    return _home()
-
-
-@app.post("/logout")
-def logout() -> RedirectResponse:
-    return _home()
-
-
 @app.get("/")
+@app.get("/login")
+@app.post("/login")
+@app.post("/logout")
 def home():
     return FileResponse(PAGE)
 

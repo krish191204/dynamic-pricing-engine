@@ -42,7 +42,7 @@ curl http://127.0.0.1:8000/health
 
 A healthy process returns `{"status":"ok","agents":10}`.
 
-An old `/login` or `/logout` address redirects to the wizard.
+There is no sign-up or sign-in page. An old `/login` address still opens the wizard.
 
 ## Run the sample in the terminal
 
@@ -276,7 +276,7 @@ A normal run has status `pending`. The form has no approve or override control. 
 
 The server binds to your machine only when you use `--host 127.0.0.1`. Do not put this process on a public network. `POST /runs` reads whatever filesystem path you send in `csv_path`.
 
-`GET /` returns the page. `GET /health` returns the status above. `GET /login` and `POST /login` or `/logout` redirect to `/`. There is no account table.
+`GET /` returns the page. `GET /health` returns the status above. There is no account table and no sign-up form. `GET /login` is the same page as `/`.
 
 `POST /uploads` takes a multipart file field named `file`. The response is:
 
